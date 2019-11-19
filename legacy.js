@@ -125,7 +125,7 @@ forever start -a -l /var/log/objectum.log -o /dev/null -e /var/log/objectum-erro
 	fs.writeFileSync (path + "/node/stop.sh",
 `forever stop index.js
 	`);
-	await execAsync ("chmod +x *.sh", path + "/node");
+	await execAsync ("chmod +x " + path + "/node/*.sh");
 };
 
 async function createProject (opts) {
@@ -298,7 +298,7 @@ forever start -a -l /var/log/avers-forms.log -o /dev/null -e /var/log/avers-form
 		`cd ${path}/avers-forms
 forever stop avers-forms.js
 	`);
-	await execAsync ("chmod +x *.sh", path + "/avers-forms");
+	await execAsync ("chmod +x " + path + "/avers-forms/*.sh");
 };
 
 async function createFirewall (opts) {
@@ -348,7 +348,7 @@ forever start -a -l /var/log/firewall.log -o /dev/null -e /var/log/firewall-erro
 		`cd ${path}/firewall
 forever stop firewall.js
 	`);
-	await execAsync ("chmod +x *.sh", path + "/firewall");
+	await execAsync ("chmod +x " + path + "/firewall/*.sh");
 };
 
 async function createBackup (opts) {
@@ -396,7 +396,7 @@ cd ${path}/avers-forms
 cd ${path}/firewall
 ./start.sh
 	`);
-	await execAsync ("chmod +x *.sh", path);
+	await execAsync ("chmod +x " + path + "/*.sh");
 };
 
 async function createNokod (opts) {
