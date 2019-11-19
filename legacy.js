@@ -1,17 +1,33 @@
 "use strict";
 
 const fs = require ("fs");
-const {exec} = require ("child_process");
+//const {exec} = require ("child_process");
 
 function execAsync (cmd, cwd) {
 	return new Promise ((resolve, reject) => {
 		console.log ("cmd:", cmd, cwd || "");
+/*
 		exec (cmd, {cwd}, (err, stdout, stderr) => {
 			if (err) {
 				return reject (err);
 			}
 			console.log ("stderr:", stderr);
 			console.log ("stdout:", stdout);
+			resolve ();
+		});
+*/
+		const {spawn} = require ("child_process");
+		const tokens = cmd.split (" ");
+		const worker = spawn (tokens [0], tokens.slice (1, tokens.length), {cwd});
+		
+		worker.stdout.on ("data", (data) => {
+			console.log (`stdout: ${data}`);
+		});
+		worker.stderr.on ("data", (data) => {
+			console.error (`stderr: ${data}`);
+		});
+		worker.on ("close", (code) => {
+			console.log (`exited with code: ${code}`);
 			resolve ();
 		});
 	});
@@ -195,7 +211,7 @@ async function createProject (opts) {
 $o.db.execute ({
 	code: "${code}",
 	fn: "create",
-	path: "{path}/projects/${code}/db"
+	path: "${path}/projects/${code}/db"
 });
 	`);
 	fs.writeFileSync (path + "/projects/" + code + "/bin/remove.js",
@@ -386,10 +402,10 @@ async function createNokod (opts) {
 	opts ["password"] = require ("crypto").createHash ("sha1").update (opts.password).digest ("hex").toUpperCase ();
 	
 	await createPlatform (opts);
-	await createProject (opts);
 	await createForms (opts);
 	await createFirewall (opts);
 	await createBackup (opts);
+	await createProject (opts);
 };
 
 module.exports = {
