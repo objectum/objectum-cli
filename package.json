@@ -1,28 +1,31 @@
 {
-  "name": "objectum-cli",
-  "version": "1.0.8",
-  "description": "Objectum CLI",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/objectum/objectum-cli.git"
-  },
-  "keywords": [
-    "objectum",
-    "cli"
-  ],
-  "author": "Dmitry Samortsev <samortsev@gmail.com> (http://objectum.org)",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/objectum/objectum-cli/issues"
-  },
-  "homepage": "https://github.com/objectum/objectum-cli#readme",
-  "dependencies": {
-    "commander": "^4.0.0",
-    "pg": "^7.12.1",
-    "redis": "^2.8.0"
-  }
+	"name": "objectum-cli",
+	"version": "1.0.9",
+	"description": "Objectum CLI",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+	"type": "git",
+		"url": "git://github.com/objectum/objectum-cli.git"
+	},
+	"keywords": [
+		"objectum",
+		"cli"
+	],
+	"bin": {
+		"objectum-cli": "./index.js"
+	},
+	"author": "Dmitry Samortsev <objectum.ru@gmail.com> (http://objectum.org)",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/objectum/objectum-cli/issues"
+	},
+	"homepage": "https://github.com/objectum/objectum-cli#readme",
+	"dependencies": {
+		"commander": "^4.0.0",
+		"pg": "^7.12.1",
+		"redis": "^2.8.0"
+	}
 }
