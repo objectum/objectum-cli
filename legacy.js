@@ -21,10 +21,16 @@ function execAsync (cmd, cwd) {
 		const worker = spawn (tokens [0], tokens.slice (1, tokens.length), {cwd});
 		
 		worker.stdout.on ("data", (data) => {
-			console.log (`stdout: ${data}`);
+			if (Buffer.isBuffer (data)) {
+				data = data.toString ("utf8");
+			}
+			console.log (data);
 		});
 		worker.stderr.on ("data", (data) => {
-			console.error (`stderr: ${data}`);
+			if (Buffer.isBuffer (data)) {
+				data = data.toString ("utf8");
+			}
+			console.error (data);
 		});
 		worker.on ("close", (code) => {
 			console.log (`exited with code: ${code}`);
