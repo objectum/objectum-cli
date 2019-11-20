@@ -4,7 +4,7 @@ const program = require ("commander");
 const redis = require ("redis");
 const promisify = require ("util").promisify;
 const fs = require ("fs");
-const accessAsync = promisify (fs.access);
+const chmodAsync = promisify (fs.chmod);
 const pg = require ("pg");
 const legacy = require ("./legacy");
 const {execAsync, exist, writeFile} = require ("./common");
@@ -64,6 +64,9 @@ async function createPlatform (opts) {
 		if (await exist (`${opts.path}/server`)) {
 			throw new Error (`Directory exists: ${opts.path}/server`);
 		}
+		if (await exist (`${opts.path}/server`)) {
+			throw new Error (`Directory exists: ${opts.path}/server`);
+		}
 		await execAsync (`mkdir -p ${opts.path}/server`);
 
 		if (!await exist (`${opts.path}/projects`)) {
@@ -97,12 +100,24 @@ async function createPlatform (opts) {
 	}
 };
 		`);
-		writeFile (`${opts.path}/server/index.js`, `require ("objectum").start (require ("./config"));`);
+		writeFile (`${opts.path}/server/index--${opts.objectumPort}.js`, `require ("objectum").start (require ("./config"));`);
 		writeFile (`${opts.path}/server/objectum.js`,
 		`let Objectum = require ("objectum").Objectum;
 
 module.exports = new Objectum (require ("./config"));
 		`);
+		writeFile (`${opts.path}/server/start.sh`,
+			`cd ${opts.path}/server
+rm *.log
+export NODE_ENV=production
+forever start -a -l ${opts.path}/server/objectum.log -o /dev/null -e ${opts.path}/server/objectum-error.log --sourceDir ${opts.path}/server index-${opts.objectumPort}.js
+	`);
+		writeFile (`${opts.path}/server/stop.sh`,
+			`cd ${opts.path}/server
+forever stop index-${opts.objectumPort}.js
+	`);
+		await chmodAsync (`${opts.path}/server/start.sh`, 0o777);
+		await chmodAsync (`${opts.path}/server/stop.sh`, 0o777);
 	} catch (err) {
 		error (err.message);
 	}
@@ -113,11 +128,9 @@ async function createProject (opts) {
 		if (!opts.path) {
 			throw new Error ("--path <path> not exist");
 		}
-/*
 		if (await exist (`${opts.path}/projects/${opts.createProject}`)) {
 			throw new Error (`Directory exists: ${opts.path}/projects/${opts.createProject}`);
 		}
-*/
 		if (!await exist (`${opts.path}/server`)) {
 			await createPlatform (opts);
 		}
@@ -128,7 +141,7 @@ async function createProject (opts) {
 		opts.dbDbaPassword = opts.dbDbaPassword || "12345";
 	
 		await checkPostgresPassword (opts);
-//		await execAsync (`mkdir -p ${opts.path}/projects/${opts.createProject}`);
+		await execAsync (`mkdir -p ${opts.path}/projects/${opts.createProject}`);
 		
 	
 		
@@ -140,7 +153,7 @@ async function createProject (opts) {
 program
 .version (require ("./package").version)
 .option ("--create-platform", "Create platform")
-.option ("--path <path>", "Objectum path. Default: current folder")
+.option ("--path <path>", "Objectum path")
 .option ("--create-project <name>", "Create project")
 .option ("--remove-project <name>", "Remove project")
 .option ("--create-model <JSON>", "Create model")
@@ -179,6 +192,8 @@ async function start () {
 start ();
 
 /*
+	npm i -g objectum-cli forever
+
 	objectum-cli -cp -p /opt/objectum
 	objectum-cli -cp my_project -p /opt/objectum -db-dbaPassword 12345  -db-host localhost -db-port 5423
 	objectum-cli -rp my_project -p /opt/objectum
