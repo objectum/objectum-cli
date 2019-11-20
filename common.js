@@ -3,6 +3,7 @@
 const promisify = require ("util").promisify;
 const fs = require ("fs");
 const accessAsync = promisify (fs.access);
+const mkdirAsyncInternal = promisify (fs.mkdir);
 
 function execAsync (cmd, cwd) {
 	return new Promise ((resolve, reject) => {
@@ -45,8 +46,14 @@ function writeFile (file, data) {
 	fs.writeFileSync (file, data);
 };
 
+async function mkdirAsync (path) {
+	console.log ("mkdir:", path);
+	await mkdirAsyncInternal (path, {recirsive: true});
+};
+
 module.exports = {
 	execAsync,
 	exist,
-	writeFile
+	writeFile,
+	mkdirAsync
 };

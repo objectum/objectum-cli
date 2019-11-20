@@ -10,7 +10,7 @@ const fs = require ("fs");
 const chmodAsync = promisify (fs.chmod);
 const pg = require ("pg");
 const legacy = require ("./legacy");
-const {execAsync, exist, writeFile} = require ("./common");
+const {execAsync, exist, writeFile, mkdirAsync} = require ("./common");
 
 function error (s) {
 	console.error (s);
@@ -70,10 +70,10 @@ async function createPlatform (opts) {
 		if (await exist (`${opts.path}/server`)) {
 			throw new Error (`Directory exists: ${opts.path}/server`);
 		}
-		await execAsync (`mkdir -p ${opts.path}/server`);
+		await mkdirAsync (`${opts.path}/server`);
 
 		if (!await exist (`${opts.path}/projects`)) {
-			await execAsync (`mkdir -p ${opts.path}/projects`);
+			await mkdirAsync (`${opts.path}/projects`);
 		}
 		await execAsync ("npm i objectum", `${opts.path}/server`);
 		
@@ -145,7 +145,7 @@ async function createProject (opts) {
 		opts.password = require ("crypto").createHash ("sha1").update (opts.password || "admin").digest ("hex").toUpperCase ();
 	
 		await checkPostgresPassword (opts);
-		await execAsync (`mkdir -p ${opts.path}/projects/${opts.createProject}`);
+		await mkdirAsync (`${opts.path}/projects/${opts.createProject}`);
 		await execAsync (`npm init react-app .`, `${opts.path}/projects/${opts.createProject}`);
 		await execAsync (`npm install express express-http-proxy objectum-client objectum-react`, `${opts.path}/projects/${opts.createProject}`);
 		
@@ -233,9 +233,9 @@ class App extends Component {
 
 export default App;
 		`);
-		await execAsync (`mkdir -p ${opts.path}/projects/${opts.createProject}/bin`);
-		await execAsync (`mkdir -p ${opts.path}/projects/${opts.createProject}/files`);
-		await execAsync (`mkdir -p ${opts.path}/projects/${opts.createProject}/schema`);
+		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/bin`);
+		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/files`);
+		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/schema`);
 
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/create.js`,
 			`let $o = require ("${opts.path}/server/objectum");
@@ -291,8 +291,8 @@ forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /
 
 program
 .version (require ("./package").version)
-.option ("--create-platform", "Create platform")
 .option ("--path <path>", "Objectum path")
+.option ("--create-platform", "Create platform")
 .option ("--create-project <name>", "Create project")
 //.option ("--remove-project <name>", "Remove project")
 .option ("--redis-host <host>", "Redis server host. Default: 127.0.0.1")
