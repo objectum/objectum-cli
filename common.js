@@ -11,7 +11,12 @@ function execAsync (cmd, cwd) {
 		
 		const {spawn} = require ("child_process");
 		const tokens = cmd.split (" ");
-		const worker = spawn (tokens [0], tokens.slice (1, tokens.length), {cwd});
+		let cmd = tokens [0];
+		
+		if (cmd == "npm" && /^win/.test (process.platform)) {
+			cmd = "npm.cmd";
+		}
+		const worker = spawn (cmd, tokens.slice (1, tokens.length), {cwd});
 		
 		worker.stdout.on ("data", (data) => {
 			if (Buffer.isBuffer (data)) {
