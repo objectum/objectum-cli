@@ -2,43 +2,107 @@
 
 const program = require ("commander");
 const redis = require ("redis");
+const promisify = require ("util").promisify;
+const fs = require ("fs");
+const accessAsync = promisify (fs.access);
 const pg = require ("pg");
 const legacy = require ("./legacy");
+const {execAsync, exist, writeFile} = require ("./common");
 
 function error (s) {
 	console.error (s);
 	process.exit (1);
 };
 
-function checkRedis (opts) {
-	return new Promise ((resolve, reject) => {
-		let host = opts ["redis-host"] || "127.0.0.1";
-		let port = opts ["redis-port"] || 6379;
+async function checkRedis (opts) {
+	try {
+		let host = opts.redisHost || "127.0.0.1";
+		let port = opts.redisPort || 6379;
 		let redisClient = redis.createClient (port, host);
 		
-		redisClient.get ("*", function (err) {
-			if (err) {
-				reject (`Redis error: ${err} (host: ${host}, port: ${port})`);
-			} else {
-				resolve ();
-			}
-		});
-	});
+		redisClient.getAsync = promisify (redisClient.get);
+		
+		await redisClient.getAsync ("*");
+
+		console.log ("Redis ok.");
+	} catch (err) {
+		throw new Error (`Redis error: ${err.message}`);
+	}
 };
 
-async function checkPostgresPassword (password) {
+async function checkPostgresPassword (opts) {
+	try {
+		let connection = `tcp://postgres:${opts.dbDbaPassword}@${opts.dbHost}:${opts.dbPort}/postgres`;
+		let client = new pg.Client (connection);
+		
+		client.connectAsync = promisify (client.connect);
+		client.queryAsync = promisify (client.query);
+		
+		await client.connectAsync ();
+		console.log (await client.queryAsync ("select version ()"));
+		
+		client.end ();
+
+		console.log (`postgres ok: ${connection}`);
+	} catch (err) {
+		throw new Error (`postgres error: ${err.message}`);
+	}
 };
 
 async function createPlatform (opts) {
 	try {
-		if (!opts ["path"]) {
-			throw new Error ("--path <objectum path> not exist");
+		if (!opts.path) {
+			throw new Error ("--path <path> not exist");
 		}
-		// создать в текущей пустой папке
+		opts.objectumPort = opts.objectumPort || 8200;
+		opts.redisHost = opts.redisHost || "127.0.0.1";
+		opts.redisPort = opts.redisPort || 6379;
+		opts.redisPort = opts.redisPort || 6379;
 		
-		// проверить существует папка server, projects
+		await checkRedis (opts);
 		
-		await checkRedis ();
+		if (await exist (`${opts.path}/server`)) {
+			throw new Error (`Directory exists: ${opts.path}/server`);
+		}
+		await execAsync (`mkdir -p ${opts.path}/server`);
+
+		if (!await exist (`${opts.path}/projects`)) {
+			await execAsync (`mkdir -p ${opts.path}/projects`);
+		}
+		await execAsync ("npm i objectum", `${opts.path}/server`);
+		
+		writeFile (`${opts.path}/server/config.json`,
+		`module.exports = {
+	rootDir: "${opts.path}/server",
+	projectsDir: "${opts.path}/projects",
+	startPort: ${opts.objectumPort},
+	redis: {
+		host: "${opts.redisHost}",
+		port: ${opts.redisPort}
+	},
+	query: {
+		maxRowNum: 2000000,
+		maxCount: 700000
+	},
+	log: {
+		level: "info"
+	},
+	cluster: {
+		www: {
+			workers: 3
+		},
+		app: {
+			workers: 3
+		}
+	}
+};
+		`);
+		writeFile (`${opts.path}/server/index.js`, `require ("objectum").start (require ("./config"));`);
+		writeFile (`${opts.path}/server/objectum.js`,
+		`let Objectum = require ("objectum").Objectum;
+
+module.exports = new Objectum (require ("./config"));
+		`);
 	} catch (err) {
 		error (err.message);
 	}
@@ -46,14 +110,28 @@ async function createPlatform (opts) {
 
 async function createProject (opts) {
 	try {
-		if (!opts ["path"]) {
-			throw new Error ("--path <objectum path> not exist");
+		if (!opts.path) {
+			throw new Error ("--path <path> not exist");
 		}
-		// создать в папке где есть только две папки server, projects
+/*
+		if (await exist (`${opts.path}/projects/${opts.createProject}`)) {
+			throw new Error (`Directory exists: ${opts.path}/projects/${opts.createProject}`);
+		}
+*/
+		if (!await exist (`${opts.path}/server`)) {
+			await createPlatform (opts);
+		}
+		opts.projectPort = opts.projectPort || 3100;
+		opts.dbHost = opts.dbHost || "127.0.0.1";
+		opts.dbPort = opts.dbPort || 5432;
+		opts.dbDbPassword = opts.dbDbPassword || "1";
+		opts.dbDbaPassword = opts.dbDbaPassword || "12345";
+	
+		await checkPostgresPassword (opts);
+//		await execAsync (`mkdir -p ${opts.path}/projects/${opts.createProject}`);
 		
-		// проверить существует папка project
+	
 		
-		await checkRedis ();
 	} catch (err) {
 		error (err.message);
 	}
@@ -71,43 +149,35 @@ program
 .option ("--create-column <JSON>", "Create column")
 .option ("--redis-host <host>", "Redis server host. Default: 127.0.0.1")
 .option ("--redis-port <port>", "Redis server port. Default: 6379")
+.option ("--objectum-port <port>", "Objectum port. Default: 8200")
+.option ("--project-port <port>", "Project port. Default: 3100")
 .option ("--db-host <host>", "PostgreSQL server host. Default: 127.0.0.1")
 .option ("--db-port <port>", "PostgreSQL server port. Default: 5432")
-.option ("--db-dbPassword <port>", "User password of project database. Default: 1")
-.option ("--port <port>", "Project port. Default: 3100")
+.option ("--db-dbPassword <password>", "User password of project database. Default: 1")
+.option ("--db-dbaPassword <password>", "postgres password. Default: 12345")
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--password <password>", "Legacy option")
 .option ("--siteKey <siteKey>", "Legacy option")
 .option ("--secretKey <secretKey>", "Legacy option")
 .parse (process.argv);
 
-if (program ["create-platform"]) {
-	if (program ["legacy"]) {
-		legacy.createPlatform (program);
+async function start () {
+	if (program ["createPlatform"]) {
+		await createPlatform (program);
+		process.exit (1);
+	} else if (program ["createProject"]) {
+		await createProject (program);
+		process.exit (1);
+	} else if (program ["removeProject"]) {
+	
+	} else if (program ["createNokod"]) {
+		legacy.createNokod (program);
 	} else {
-		createPlatform (program);
+		return program.outputHelp ();
 	}
-} else
-if (program ["create-project"]) {
-	if (program ["legacy"]) {
-		legacy.createProject (program);
-	} else {
-		createProject (program);
-	}
-} else
-if (program ["remove-project"]) {
-	if (program ["legacy"]) {
-		error ("not supported");
-	}
-	if (!program ["path"]) {
-		error ("--path <objectum path> not exist");
-	}
-} else
-if (program ["createNokod"]) {
-	legacy.createNokod (program);
-} else {
-	return program.outputHelp ();
-}
+};
+start ();
+
 /*
 	objectum-cli -cp -p /opt/objectum
 	objectum-cli -cp my_project -p /opt/objectum -db-dbaPassword 12345  -db-host localhost -db-port 5423

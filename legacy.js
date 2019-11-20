@@ -1,43 +1,7 @@
 "use strict";
 
 const fs = require ("fs");
-//const {exec} = require ("child_process");
-
-function execAsync (cmd, cwd) {
-	return new Promise ((resolve, reject) => {
-		console.log ("cmd:", cmd, cwd || "");
-/*
-		exec (cmd, {cwd}, (err, stdout, stderr) => {
-			if (err) {
-				return reject (err);
-			}
-			console.log ("stderr:", stderr);
-			console.log ("stdout:", stdout);
-			resolve ();
-		});
-*/
-		const {spawn} = require ("child_process");
-		const tokens = cmd.split (" ");
-		const worker = spawn (tokens [0], tokens.slice (1, tokens.length), {cwd});
-		
-		worker.stdout.on ("data", (data) => {
-			if (Buffer.isBuffer (data)) {
-				data = data.toString ("utf8");
-			}
-			console.log (data);
-		});
-		worker.stderr.on ("data", (data) => {
-			if (Buffer.isBuffer (data)) {
-				data = data.toString ("utf8");
-			}
-			console.error (data);
-		});
-		worker.on ("close", (code) => {
-			console.log (`exited with code: ${code}`);
-			resolve ();
-		});
-	});
-};
+const {execAsync} = require ("./common");
 
 async function createPlatform (opts) {
 	let path = opts ["path"];
@@ -330,7 +294,7 @@ async function createFirewall (opts) {
 	}
 };
 	`;
-	fs.writeFileSync (path + "/firewall/config.json", config);
+	fs.writeFileSync (path + "/firewall/config.js", config);
 	
 	fs.writeFileSync (path + "/firewall/restart.sh",
 		`cd ${path}/firewall
@@ -415,7 +379,5 @@ async function createNokod (opts) {
 };
 
 module.exports = {
-	createPlatform,
-	createProject,
 	createNokod
 };
