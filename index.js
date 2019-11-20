@@ -329,6 +329,8 @@ program
 .option ("--create-property <JSON>", "Create property")
 .option ("--create-query <JSON>", "Create query")
 .option ("--create-column <JSON>", "Create column")
+.option ("--create-dictionary <JSON>", "Create dictionary")
+.option ("--create-table <JSON>", "Create table")
 */
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--siteKey <siteKey>", "Legacy option")
