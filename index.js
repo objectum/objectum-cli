@@ -11,6 +11,7 @@ const chmodAsync = promisify (fs.chmod);
 const pg = require ("pg");
 const legacy = require ("./legacy");
 const {execAsync, exist, writeFile, mkdirAsync} = require ("./common");
+const isWin = /^win/.test (process.platform);
 
 function error (s) {
 	console.error (s);
@@ -109,16 +110,25 @@ async function createPlatform (opts) {
 
 module.exports = new Objectum (require ("./config"));
 		`);
-		writeFile (`${opts.path}/server/start.sh`,
-			`rm ${opts.path}/server/*.log
+		if (isWin) {
+			writeFile (`${opts.path}/server/start.bat`,
+				`set NODE_ENV=production
+forever start -a -l ${opts.path}/server/objectum.log -o ${opts.path}/server/objectum-out.log -e ${opts.path}/server/objectum-err.log --sourceDir ${opts.path}/server index-${opts.objectumPort}.js
+			`);
+		} else {
+			writeFile (`${opts.path}/server/start.sh`,
+				`rm ${opts.path}/server/*.log
 export NODE_ENV=production
 forever start -a -l ${opts.path}/server/objectum.log -o /dev/null -e ${opts.path}/server/objectum-error.log --sourceDir ${opts.path}/server index-${opts.objectumPort}.js
-	`);
-		writeFile (`${opts.path}/server/stop.sh`,
+			`);
+		}
+		writeFile (`${opts.path}/server/stop.${isWin ? "bat" : "sh"}`,
 			`forever stop ${opts.path}/server/index-${opts.objectumPort}.js
-	`);
-		await chmodAsync (`${opts.path}/server/start.sh`, 0o777);
-		await chmodAsync (`${opts.path}/server/stop.sh`, 0o777);
+		`);
+		if (!isWin) {
+			await chmodAsync (`${opts.path}/server/start.sh`, 0o777);
+			await chmodAsync (`${opts.path}/server/stop.sh`, 0o777);
+		}
 	} catch (err) {
 		error (err.message);
 	}
@@ -272,16 +282,25 @@ $o.db.execute ({
 	file: "../schema/schema-${opts.createProject}.json"
 });
 		`);
-		writeFile (`${opts.path}/projects/${opts.createProject}/start.sh`,
-			`rm ${opts.path}/projects/${opts.createProject}/*.log
-export NODE_ENV=production
-forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /dev/null -e ${opts.path}/projects/${opts.createProject}/project-error.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
-	`);
-		writeFile (`${opts.path}/projects/${opts.createProject}/stop.sh`,
+		if (isWin) {
+			writeFile (`${opts.path}/projects/${opts.createProject}/start.bat`,
+				`set NODE_ENV=production
+	forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o ${opts.path}/projects/${opts.createProject}/project-out.log -e ${opts.path}/projects/${opts.createProject}/project-err.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
+			`);
+		} else {
+			writeFile (`${opts.path}/projects/${opts.createProject}/start.sh`,
+				`rm ${opts.path}/projects/${opts.createProject}/*.log
+	export NODE_ENV=production
+	forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /dev/null -e ${opts.path}/projects/${opts.createProject}/project-error.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
+			`);
+		}
+		writeFile (`${opts.path}/projects/${opts.createProject}/stop.${isWin ? "bat" : "sh"}`,
 			`forever stop ${opts.path}/projects/${opts.createProject}/index-${opts.projectPort}.js
 	`);
-		await chmodAsync (`${opts.path}/projects/${opts.createProject}/start.sh`, 0o777);
-		await chmodAsync (`${opts.path}/projects/${opts.createProject}/stop.sh`, 0o777);
+		if (!isWin) {
+			await chmodAsync (`${opts.path}/projects/${opts.createProject}/start.sh`, 0o777);
+			await chmodAsync (`${opts.path}/projects/${opts.createProject}/stop.sh`, 0o777);
+		}
 		await execAsync (`node ${opts.path}/projects/${opts.createProject}/bin/create.js`, `${opts.path}/projects/${opts.createProject}/bin`);
 		await execAsync (`node ${opts.path}/projects/${opts.createProject}/bin/import.js`, `${opts.path}/projects/${opts.createProject}/bin`);
 	} catch (err) {
