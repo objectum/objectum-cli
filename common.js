@@ -11,7 +11,8 @@ function execAsync (cmd, cwd) {
 		
 		const {spawn} = require ("child_process");
 		const tokens = cmd.split (" ");
-		let cmd = tokens [0];
+		
+		cmd = tokens [0];
 		
 		if (cmd == "npm" && /^win/.test (process.platform)) {
 			cmd = "npm.cmd";
