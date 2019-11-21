@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-/*
-	npm i -g objectum-cli forever
- */
 const program = require ("commander");
 const redis = require ("redis");
 const promisify = require ("util").promisify;
@@ -11,7 +8,7 @@ const chmodAsync = promisify (fs.chmod);
 const pg = require ("pg");
 const legacy = require ("./legacy");
 const {error, execAsync, exist, writeFile, mkdirAsync} = require ("./common");
-const {createModel, createProperty, createQuery, createColumn} = require ("./store");
+const {createModel, createProperty, createQuery, createColumn, importCSV} = require ("./store");
 const isWin = /^win/.test (process.platform);
 
 async function checkRedis (opts) {
@@ -324,6 +321,8 @@ program
 .option ("--create-property <JSON>", "Create property")
 .option ("--create-query <JSON>", "Create query")
 .option ("--create-column <JSON>", "Create column")
+.option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
+.option ("--model <model>", "Model")
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--siteKey <siteKey>", "Legacy option")
 .option ("--secretKey <secretKey>", "Legacy option")
@@ -347,6 +346,9 @@ async function start () {
 		process.exit (1);
 	} else if (program ["createColumn"]) {
 		await createColumn (program);
+		process.exit (1);
+	} else if (program ["importCsv"]) {
+		await importCSV (program);
 		process.exit (1);
 	} else if (program ["createNokod"]) {
 		legacy.createNokod (program);

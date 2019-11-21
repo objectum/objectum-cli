@@ -1,5 +1,6 @@
 "use strict";
 
+const fs = require ("fs");
 const store = require ("objectum-client");
 const {error, exist} = require ("./common");
 
@@ -25,7 +26,7 @@ async function createModel (opts) {
 			"username": "admin",
 			"password": opts.adminPassword
 		});
-		await store.startTransaction ("Creating model");
+		await store.startTransaction ("Create model");
 		
 		let o = await store.createModel (attrs);
 		
@@ -49,7 +50,7 @@ async function createProperty (opts) {
 			"username": "admin",
 			"password": opts.adminPassword
 		});
-		await store.startTransaction ("Creating property");
+		await store.startTransaction ("Create property");
 		
 		let o = await store.createProperty (attrs);
 		
@@ -73,7 +74,7 @@ async function createQuery (opts) {
 			"username": "admin",
 			"password": opts.adminPassword
 		});
-		await store.startTransaction ("Creating query");
+		await store.startTransaction ("Create query");
 		
 		let o = await store.createQuery (attrs);
 		
@@ -97,7 +98,7 @@ async function createColumn (opts) {
 			"username": "admin",
 			"password": opts.adminPassword
 		});
-		await store.startTransaction ("Creating column");
+		await store.startTransaction ("Create column");
 		
 		let o = await store.createColumn (attrs);
 		
@@ -109,9 +110,57 @@ async function createColumn (opts) {
 	}
 };
 
+async function importCSV (opts) {
+	try {
+		let data = fs.readFileSync (opts.importCsv, "utf8");
+		let rows = data.split ("\n");
+		
+		await updateOpts (opts);
+		
+		store.setUrl (opts.url);
+		
+		opts.sid = await store.auth ({
+			"username": "admin",
+			"password": opts.adminPassword
+		});
+		let m = store.getModel (opts.model);
+		
+		await store.startTransaction ("Import CSV");
+		
+		let properties = [];
+		
+		rows = rows.filter (row => {
+			return row && row.trim ();
+		});
+		for (let i = 0; i < rows.length; i ++) {
+			let row = rows [i];
+			let cols = row.split (";");
+			
+			if (!i) {
+				properties = cols;
+			} else {
+				let o = {_model: m.get ("id")};
+				
+				for (let j = 0; j < properties.length; j ++) {
+					let p = properties [j];
+					
+					o [p] = cols [j];
+				}
+				let record = await store.createRecord (o);
+				
+				console.log (i, "of", rows.length - 1, "result:", record._data);
+			}
+		}
+		await store.commitTransaction ();
+	} catch (err) {
+		error (err.message);
+	}
+};
+
 module.exports = {
 	createModel,
 	createProperty,
 	createQuery,
-	createColumn
+	createColumn,
+	importCSV
 };
