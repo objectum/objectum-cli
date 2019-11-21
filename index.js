@@ -10,13 +10,9 @@ const fs = require ("fs");
 const chmodAsync = promisify (fs.chmod);
 const pg = require ("pg");
 const legacy = require ("./legacy");
-const {execAsync, exist, writeFile, mkdirAsync} = require ("./common");
+const {error, execAsync, exist, writeFile, mkdirAsync} = require ("./common");
+const {createModel, createProperty, createQuery, createColumn} = require ("./store");
 const isWin = /^win/.test (process.platform);
-
-function error (s) {
-	console.error (s);
-	process.exit (1);
-};
 
 async function checkRedis (opts) {
 	try {
@@ -324,14 +320,10 @@ program
 .option ("--db-dbaPassword <password>", "postgres password. Default: 12345")
 .option ("--db-path <path>", "Optional tablespace directory")
 .option ("--password <password>", "Project 'admin' password. Default: admin")
-/*
 .option ("--create-model <JSON>", "Create model")
 .option ("--create-property <JSON>", "Create property")
 .option ("--create-query <JSON>", "Create query")
 .option ("--create-column <JSON>", "Create column")
-.option ("--create-dictionary <JSON>", "Create dictionary")
-.option ("--create-table <JSON>", "Create table")
-*/
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--siteKey <siteKey>", "Legacy option")
 .option ("--secretKey <secretKey>", "Legacy option")
@@ -344,8 +336,18 @@ async function start () {
 	} else if (program ["createProject"]) {
 		await createProject (program);
 		process.exit (1);
-	} else if (program ["removeProject"]) {
-	
+	} else if (program ["createModel"]) {
+		await createModel (program);
+		process.exit (1);
+	} else if (program ["createProperty"]) {
+		await createProperty (program);
+		process.exit (1);
+	} else if (program ["createQuery"]) {
+		await createQuery (program);
+		process.exit (1);
+	} else if (program ["createColumn"]) {
+		await createColumn (program);
+		process.exit (1);
 	} else if (program ["createNokod"]) {
 		legacy.createNokod (program);
 	} else {

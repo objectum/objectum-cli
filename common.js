@@ -5,6 +5,11 @@ const fs = require ("fs");
 const accessAsync = promisify (fs.access);
 const mkdirAsyncInternal = promisify (fs.mkdir);
 
+function error (s) {
+	console.error (s);
+	process.exit (1);
+};
+
 function execAsync (cmd, cwd) {
 	return new Promise ((resolve, reject) => {
 		console.log ("cmd:", cmd, cwd ? (`cwd: ${cwd}`) : "");
@@ -58,6 +63,7 @@ async function mkdirAsync (path) {
 };
 
 module.exports = {
+	error,
 	execAsync,
 	exist,
 	writeFile,
