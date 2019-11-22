@@ -1,11 +1,11 @@
-#Objectum command-line interface (CLI)
+# Objectum command-line interface (CLI)
 
-##Install:
+## Install:
 ```bash
 npm i -g objectum-cli
 ```
 
-##Options:
+## Options:
 ```bash
 > objectum-cli
 
