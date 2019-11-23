@@ -26,11 +26,13 @@ Options:
   --db-dbaPassword <password>  postgres password. Default: 12345
   --db-path <path>             Optional tablespace directory
   --password <password>        Project 'admin' password. Default: admin
-  --create-model <JSON>        Create model
-  --create-property <JSON>     Create property
-  --create-query <JSON>        Create query
-  --create-column <JSON>       Create column
-  --import-csv <file>          Import CSV file. Properties in 1st row. Delimiter ";". Require --model.
+  --create-model <JSON>        Create model. Example: objectum-cli --create-model "{'name': 'Item', 'code': 'item'}"
+  --create-property <JSON>     Create property. Example: objectum-cli --create-property "{'model': 'item', 'name': 'Name', 'code': 'name'}"
+  --create-query <JSON>        Create query. Example: objectum-cli --create-query "{'name': 'Items', 'code': 'item'}"
+  --create-column <JSON>       Create column. Example: objectum-cli --create-column "{'query': 'item', 'name': 'Name', 'code': 'name'}
+  --create-record <JSON>       Create record. Example: objectum-cli --create-record "{'_model': 'item', 'name': 'Item 1'}"
+  --create-dictionary <JSON>   Create dictionary in model. Example: objectum-cli --create-dictionary "{'name': 'Type', 'code': 'type'}" --model item
+  --create-table <JSON>        Create table (tabular part) in model. Example: objectum-cli --create-table "{'name': 'Comment', 'code': 'comment'}" --model item  --import-csv <file>          Import CSV file. Properties in 1st row. Delimiter ";". Require --model.
   --model <model>              Model
   -h, --help                   output usage information
 ```
