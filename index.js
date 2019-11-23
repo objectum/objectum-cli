@@ -329,6 +329,9 @@ program
 .parse (process.argv);
 
 async function start () {
+	if (program ["path"]) {
+		program ["path"] = program ["path"].split ("\\").join ("/");
+	}
 	if (program ["createPlatform"]) {
 		await createPlatform (program);
 		process.exit (1);

@@ -1,6 +1,6 @@
 {
 	"name": "objectum-cli",
-	"version": "1.0.20",
+	"version": "1.0.21",
 	"description": "Objectum CLI",
 	"main": "index.js",
 	"scripts": {
