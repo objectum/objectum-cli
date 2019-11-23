@@ -14,15 +14,17 @@ async function updateOpts (opts) {
 	opts.adminPassword = config.adminPassword;
 	
 	["createModel", "createProperty", "createQuery", "createColumn", "createRecord"].forEach (a => {
-		opts [a] = opts [a].split ("'").join ('"');
+		if (opts [a]) {
+			opts [a] = opts [a].split ("'").join ('"');
+		}
 	});
 };
 
 async function createModel (opts) {
 	try {
-		let attrs = JSON.parse (opts.createModel);
-		
 		await updateOpts (opts);
+		
+		let attrs = JSON.parse (opts.createModel);
 		
 		store.setUrl (opts.url);
 		
@@ -44,9 +46,9 @@ async function createModel (opts) {
 
 async function createProperty (opts) {
 	try {
-		let attrs = JSON.parse (opts.createProperty);
-		
 		await updateOpts (opts);
+		
+		let attrs = JSON.parse (opts.createProperty);
 		
 		store.setUrl (opts.url);
 		
@@ -68,9 +70,9 @@ async function createProperty (opts) {
 
 async function createQuery (opts) {
 	try {
-		let attrs = JSON.parse (opts.createQuery);
-		
 		await updateOpts (opts);
+		
+		let attrs = JSON.parse (opts.createQuery);
 		
 		store.setUrl (opts.url);
 		
@@ -92,9 +94,9 @@ async function createQuery (opts) {
 
 async function createColumn (opts) {
 	try {
-		let attrs = JSON.parse (opts.createColumn);
-		
 		await updateOpts (opts);
+		
+		let attrs = JSON.parse (opts.createColumn);
 		
 		store.setUrl (opts.url);
 		
@@ -116,9 +118,9 @@ async function createColumn (opts) {
 
 async function createRecord (opts) {
 	try {
-		let attrs = JSON.parse (opts.createRecord);
-		
 		await updateOpts (opts);
+		
+		let attrs = JSON.parse (opts.createRecord);
 		
 		store.setUrl (opts.url);
 		
@@ -140,10 +142,10 @@ async function createRecord (opts) {
 
 async function importCSV (opts) {
 	try {
+		await updateOpts (opts);
+		
 		let data = fs.readFileSync (opts.importCsv, "utf8");
 		let rows = data.split ("\n");
-		
-		await updateOpts (opts);
 		
 		store.setUrl (opts.url);
 		
