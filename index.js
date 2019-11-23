@@ -8,7 +8,7 @@ const chmodAsync = promisify (fs.chmod);
 const pg = require ("pg");
 const legacy = require ("./legacy");
 const {error, execAsync, exist, writeFile, mkdirAsync} = require ("./common");
-const {createModel, createProperty, createQuery, createColumn, createRecord, importCSV} = require ("./store");
+const {createModel, createProperty, createQuery, createColumn, createRecord, createDictionary, createTable, importCSV} = require ("./store");
 const isWin = /^win/.test (process.platform);
 
 async function checkRedis (opts) {
@@ -18,13 +18,14 @@ async function checkRedis (opts) {
 		let redisClient = redis.createClient (port, host);
 		
 		redisClient.on ("error", function (err) {
-			console.error ("Redis error:", err);
+			console.error ("\x1b[31m%s\x1b[0m", "Redis error:", err);
 			process.exit (1);
 		});
 		redisClient.getAsync = promisify (redisClient.get);
 		
 		await redisClient.getAsync ("*");
-
+		
+		console.log ("\x1b[32m%s\x1b[0m", "Redis ok.");
 		console.log ("Redis ok.");
 	} catch (err) {
 		throw new Error (`Redis error: ${err.message}`);
@@ -44,7 +45,7 @@ async function checkPostgresPassword (opts) {
 		
 		client.end ();
 
-		console.log (`postgres ok: ${connection}`);
+		console.log ("\x1b[32m%s\x1b[0m", `postgres ok: ${connection}`);
 	} catch (err) {
 		throw new Error (`postgres error: ${err.message}`);
 	}
@@ -321,11 +322,13 @@ program
 .option ("--db-dbaPassword <password>", "postgres password. Default: 12345")
 .option ("--db-path <path>", "Optional tablespace directory")
 .option ("--password <password>", "Project 'admin' password. Default: admin")
-.option ("--create-model <JSON>", "Create model")
-.option ("--create-property <JSON>", "Create property")
-.option ("--create-query <JSON>", "Create query")
-.option ("--create-column <JSON>", "Create column")
-.option ("--create-record <JSON>", "Create record")
+.option ("--create-model <JSON>", `Create model. Example: objectum-cli --create-model "{'name': 'Item', 'code': 'item'}"`)
+.option ("--create-property <JSON>", `Create property. Example: objectum-cli --create-property "{'model': 'item', 'name': 'Name', 'code': 'name'}"`)
+.option ("--create-query <JSON>", `Create query. Example: objectum-cli --create-query \"{'name': 'Items', 'code': 'item'}\"`)
+.option ("--create-column <JSON>", `Create column. Example: objectum-cli --create-column "{'query': 'item', 'name': 'Name', 'code': 'name'}`)
+.option ("--create-record <JSON>", `Create record. Example: objectum-cli --create-record "{'_model': 'item', 'name': 'Item 1'}"`)
+.option ("--create-dictionary <JSON>", `Create dictionary in model. Example: objectum-cli --create-dictionary "{'name': 'Type', 'code': 'type'}" --model item`) // name, code
+.option ("--create-table <JSON>", `Create table (tabular part) in model. Example: objectum-cli --create-table "{'name': 'Comment', 'code': 'comment'}" --model item`)
 .option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
 .option ("--create-nokod <code>", "Legacy option")
@@ -357,6 +360,12 @@ async function start () {
 		process.exit (1);
 	} else if (program ["createRecord"]) {
 		await createRecord (program);
+		process.exit (1);
+	} else if (program ["createDictionary"]) {
+		await createDictionary (program);
+		process.exit (1);
+	} else if (program ["createTable"]) {
+		await createTable (program);
 		process.exit (1);
 	} else if (program ["importCsv"]) {
 		await importCSV (program);

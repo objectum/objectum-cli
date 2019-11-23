@@ -6,14 +6,17 @@ const accessAsync = promisify (fs.access);
 const mkdirAsyncInternal = promisify (fs.mkdir);
 
 function error (s) {
-	console.error (s);
+	console.error ("\x1b[31m%s\x1b[0m", s);
 	process.exit (1);
 };
 
 function execAsync (cmd, cwd) {
 	return new Promise ((resolve, reject) => {
-		console.log ("cmd:", cmd, cwd ? (`cwd: ${cwd}`) : "");
-		
+		if (cwd) {
+			console.log ("\x1b[32m%s\x1b[0m", `command: ${cmd}, directory: ${cwd}`);
+		} else {
+			console.log ("\x1b[32m%s\x1b[0m", `command: ${cmd}`);
+		}
 		const {spawn} = require ("child_process");
 		const tokens = cmd.split (" ");
 		
@@ -53,12 +56,12 @@ async function exist (path) {
 };
 
 function writeFile (file, data) {
-	console.log ("writeFile:", file, "data:\n", data);
+	console.log ("\x1b[32m%s\x1b[0m", `writeFile: ${file}, "data:\n"`, data);
 	fs.writeFileSync (file, data);
 };
 
 async function mkdirAsync (path) {
-	console.log ("mkdir:", path);
+	console.log ("\x1b[32m%s\x1b[0m", `mkdir: ${path}`);
 	await mkdirAsyncInternal (path, {recirsive: true});
 };
 

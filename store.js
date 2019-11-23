@@ -4,7 +4,7 @@ const fs = require ("fs");
 const store = require ("objectum-client");
 const {error, exist} = require ("./common");
 
-async function updateOpts (opts) {
+async function init (opts) {
 	if (!await exist (`${process.cwd ()}/config.json`)) {
 		throw new Error (`Configuration of project "config.json" not exists in current directory.`);
 	}
@@ -13,25 +13,25 @@ async function updateOpts (opts) {
 	opts.url = `http://${config.objectum.host}:${config.objectum.port}/projects/${config.code}/`;
 	opts.adminPassword = config.adminPassword;
 	
-	["createModel", "createProperty", "createQuery", "createColumn", "createRecord"].forEach (a => {
+	["createModel", "createProperty", "createQuery", "createColumn", "createRecord", "createDictionary", "createTable"].forEach (a => {
 		if (opts [a]) {
 			opts [a] = opts [a].split ("'").join ('"');
 		}
+	});
+	store.setUrl (opts.url);
+	
+	opts.sid = await store.auth ({
+		"username": "admin",
+		"password": opts.adminPassword
 	});
 };
 
 async function createModel (opts) {
 	try {
-		await updateOpts (opts);
+		await init (opts);
 		
 		let attrs = JSON.parse (opts.createModel);
 		
-		store.setUrl (opts.url);
-		
-		opts.sid = await store.auth ({
-			"username": "admin",
-			"password": opts.adminPassword
-		});
 		await store.startTransaction ("Create model");
 		
 		let o = await store.createModel (attrs);
@@ -46,16 +46,10 @@ async function createModel (opts) {
 
 async function createProperty (opts) {
 	try {
-		await updateOpts (opts);
+		await init (opts);
 		
 		let attrs = JSON.parse (opts.createProperty);
 		
-		store.setUrl (opts.url);
-		
-		opts.sid = await store.auth ({
-			"username": "admin",
-			"password": opts.adminPassword
-		});
 		await store.startTransaction ("Create property");
 		
 		let o = await store.createProperty (attrs);
@@ -70,16 +64,10 @@ async function createProperty (opts) {
 
 async function createQuery (opts) {
 	try {
-		await updateOpts (opts);
+		await init (opts);
 		
 		let attrs = JSON.parse (opts.createQuery);
 		
-		store.setUrl (opts.url);
-		
-		opts.sid = await store.auth ({
-			"username": "admin",
-			"password": opts.adminPassword
-		});
 		await store.startTransaction ("Create query");
 		
 		let o = await store.createQuery (attrs);
@@ -94,16 +82,10 @@ async function createQuery (opts) {
 
 async function createColumn (opts) {
 	try {
-		await updateOpts (opts);
+		await init (opts);
 		
 		let attrs = JSON.parse (opts.createColumn);
 		
-		store.setUrl (opts.url);
-		
-		opts.sid = await store.auth ({
-			"username": "admin",
-			"password": opts.adminPassword
-		});
 		await store.startTransaction ("Create column");
 		
 		let o = await store.createColumn (attrs);
@@ -118,16 +100,10 @@ async function createColumn (opts) {
 
 async function createRecord (opts) {
 	try {
-		await updateOpts (opts);
+		await init (opts);
 		
 		let attrs = JSON.parse (opts.createRecord);
 		
-		store.setUrl (opts.url);
-		
-		opts.sid = await store.auth ({
-			"username": "admin",
-			"password": opts.adminPassword
-		});
 		await store.startTransaction ("Create record");
 		
 		let o = await store.createRecord (attrs);
@@ -140,19 +116,109 @@ async function createRecord (opts) {
 	}
 };
 
+async function createDictionary (opts) {
+	try {
+		if (!opts.model) {
+			throw new Error ("--model <model> not exist");
+		}
+		await init (opts);
+		
+		let attrs = JSON.parse (opts.createDictionary);
+
+		if (!attrs.name || !attrs.code) {
+			throw new Error ("name or code not exist");
+		}
+		store.getModel (opts.model);
+		
+		await store.startTransaction ("Create dictionary");
+		
+		let tokens = opts.model.split (".");
+		let prevPath = "d";
+		
+		for (let i = 0; i < tokens.length; i ++) {
+			let code = tokens [i];
+			let path = `d.${tokens.slice (0, i + 1).join (".")}`;
+			
+			if (!store.map ["model"][path]) {
+				await store.createModel ({
+					name: `${code [0].toUpperCase ()}${code.substr (1)}`, code, parent: prevPath
+				});
+			}
+			prevPath = path;
+		}
+		let d = await store.createModel ({
+			name: attrs.name, code: attrs.code, parent: `d.${opts.model}`
+		});
+		await store.createProperty ({
+			model: d.getPath (), name: "Name", code: "name", type: "string"
+		});
+		await store.createProperty ({
+			model: d.getPath (), name: "Code", code: "code", type: "string"
+		});
+		await store.createProperty ({
+			model: d.getPath (), name: "Order", code: "order", type: "number"
+		});
+		await store.commitTransaction ();
+		
+		console.log ("result:", d._data);
+	} catch (err) {
+		error (err.message);
+	}
+};
+
+async function createTable (opts) {
+	try {
+		if (!opts.model) {
+			throw new Error ("--model <model> not exist");
+		}
+		await init (opts);
+		
+		let attrs = JSON.parse (opts.createTable);
+		
+		if (!attrs.name || !attrs.code) {
+			throw new Error ("name or code not exist");
+		}
+		let m = store.getModel (opts.model);
+		
+		await store.startTransaction ("Create table");
+		
+		let tokens = opts.model.split (".");
+		let prevPath = "t";
+		
+		for (let i = 0; i < tokens.length; i ++) {
+			let code = tokens [i];
+			let path = `t.${tokens.slice (0, i + 1).join (".")}`;
+			
+			if (!store.map ["model"][path]) {
+				await store.createModel ({
+					name: `${code [0].toUpperCase ()}${code.substr (1)}`, code, parent: prevPath
+				});
+			}
+			prevPath = path;
+		}
+		let t = await store.createModel ({
+			name: attrs.name, code: attrs.code, parent: `t.${opts.model}`
+		});
+		await store.createProperty ({
+			model: t.getPath (), name: m.get ("name"), code: m.get ("code"), type: m.getPath ()
+		});
+		await store.commitTransaction ();
+		
+		console.log ("result:", t._data);
+	} catch (err) {
+		error (err.message);
+	}
+};
+
 async function importCSV (opts) {
 	try {
-		await updateOpts (opts);
+		if (!opts.model) {
+			throw new Error ("--model <model> not exist");
+		}
+		await init (opts);
 		
 		let data = fs.readFileSync (opts.importCsv, "utf8");
 		let rows = data.split ("\n");
-		
-		store.setUrl (opts.url);
-		
-		opts.sid = await store.auth ({
-			"username": "admin",
-			"password": opts.adminPassword
-		});
 		let m = store.getModel (opts.model);
 		
 		await store.startTransaction ("Import CSV");
@@ -193,5 +259,7 @@ module.exports = {
 	createQuery,
 	createColumn,
 	createRecord,
+	createDictionary,
+	createTable,
 	importCSV
 };
