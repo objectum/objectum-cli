@@ -12,6 +12,10 @@ async function updateOpts (opts) {
 	
 	opts.url = `http://${config.objectum.host}:${config.objectum.port}/projects/${config.code}/`;
 	opts.adminPassword = config.adminPassword;
+	
+	["createModel", "createProperty", "createQuery", "createColumn", "createRecord"].forEach (a => {
+		opts [a] = opts [a].split ("'").join ('"');
+	});
 };
 
 async function createModel (opts) {
@@ -110,6 +114,30 @@ async function createColumn (opts) {
 	}
 };
 
+async function createRecord (opts) {
+	try {
+		let attrs = JSON.parse (opts.createRecord);
+		
+		await updateOpts (opts);
+		
+		store.setUrl (opts.url);
+		
+		opts.sid = await store.auth ({
+			"username": "admin",
+			"password": opts.adminPassword
+		});
+		await store.startTransaction ("Create record");
+		
+		let o = await store.createRecord (attrs);
+		
+		await store.commitTransaction ();
+		
+		console.log ("result:", o._data);
+	} catch (err) {
+		error (err.message);
+	}
+};
+
 async function importCSV (opts) {
 	try {
 		let data = fs.readFileSync (opts.importCsv, "utf8");
@@ -162,5 +190,6 @@ module.exports = {
 	createProperty,
 	createQuery,
 	createColumn,
+	createRecord,
 	importCSV
 };

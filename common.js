@@ -37,7 +37,7 @@ function execAsync (cmd, cwd) {
 			console.error (data);
 		});
 		worker.on ("close", (code) => {
-			console.log (`exited with code: ${code}`);
+			//console.log (`exited with code: ${code}`);
 			resolve ();
 		});
 	});

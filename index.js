@@ -8,7 +8,7 @@ const chmodAsync = promisify (fs.chmod);
 const pg = require ("pg");
 const legacy = require ("./legacy");
 const {error, execAsync, exist, writeFile, mkdirAsync} = require ("./common");
-const {createModel, createProperty, createQuery, createColumn, importCSV} = require ("./store");
+const {createModel, createProperty, createQuery, createColumn, createRecord, importCSV} = require ("./store");
 const isWin = /^win/.test (process.platform);
 
 async function checkRedis (opts) {
@@ -17,6 +17,10 @@ async function checkRedis (opts) {
 		let port = opts.redisPort || 6379;
 		let redisClient = redis.createClient (port, host);
 		
+		redisClient.on ("error", function (err) {
+			console.error ("Redis error:", err);
+			process.exit (1);
+		});
 		redisClient.getAsync = promisify (redisClient.get);
 		
 		await redisClient.getAsync ("*");
@@ -321,6 +325,7 @@ program
 .option ("--create-property <JSON>", "Create property")
 .option ("--create-query <JSON>", "Create query")
 .option ("--create-column <JSON>", "Create column")
+.option ("--create-record <JSON>", "Create record")
 .option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
 .option ("--create-nokod <code>", "Legacy option")
@@ -349,6 +354,9 @@ async function start () {
 		process.exit (1);
 	} else if (program ["createColumn"]) {
 		await createColumn (program);
+		process.exit (1);
+	} else if (program ["createRecord"]) {
+		await createRecord (program);
 		process.exit (1);
 	} else if (program ["importCsv"]) {
 		await importCSV (program);
