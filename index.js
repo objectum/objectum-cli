@@ -185,7 +185,7 @@ const express = require ("express");
 const proxy = require ("express-http-proxy");
 const app = express ();
 
-app.use (\`/api\`, proxy (\`http://127.0.0.1:${config.startPort}\`, {
+app.use ("/${opts.createProject}", proxy (\`http://127.0.0.1:${config.startPort}\`, {
 	proxyReqPathResolver: function (req) {
 		let parts = req.url.split('?');
 		let queryString = parts [1] ? ("?" + parts [1]) : "";
@@ -195,11 +195,6 @@ app.use (\`/api\`, proxy (\`http://127.0.0.1:${config.startPort}\`, {
 		} else {
 			return "/projects/${opts.createProject}" + parts [0] + queryString;
 		}
-	}
-}));
-app.use ("/public/*", proxy (\`http://127.0.0.1:${config.startPort}\`, {
-	proxyReqPathResolver: function (req) {
-		return req.baseUrl;
 	}
 }));
 app.use (express.static (path.join (__dirname, "build")));
@@ -284,13 +279,13 @@ $o.db.execute ({
 		if (isWin) {
 			writeFile (`${opts.path}/projects/${opts.createProject}/start.bat`,
 				`set NODE_ENV=production
-	forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o ${opts.path}/projects/${opts.createProject}/project-out.log -e ${opts.path}/projects/${opts.createProject}/project-err.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
+forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o ${opts.path}/projects/${opts.createProject}/project-out.log -e ${opts.path}/projects/${opts.createProject}/project-err.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
 			`);
 		} else {
 			writeFile (`${opts.path}/projects/${opts.createProject}/start.sh`,
 				`rm ${opts.path}/projects/${opts.createProject}/*.log
-	export NODE_ENV=production
-	forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /dev/null -e ${opts.path}/projects/${opts.createProject}/project-error.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
+export NODE_ENV=production
+forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /dev/null -e ${opts.path}/projects/${opts.createProject}/project-error.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
 			`);
 		}
 		writeFile (`${opts.path}/projects/${opts.createProject}/stop.${isWin ? "bat" : "sh"}`,
