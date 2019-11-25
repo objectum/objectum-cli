@@ -190,7 +190,11 @@ app.use (\`/api\`, proxy (\`http://127.0.0.1:${config.startPort}\`, {
 		let parts = req.url.split('?');
 		let queryString = parts [1] ? ("?" + parts [1]) : "";
 
-		return "/projects/${opts.createProject}" + parts [0] + queryString;
+		if (parts [0].substr (0, 7) == "/public") {
+			return parts [0] + queryString;
+		} else {
+			return "/projects/${opts.createProject}" + parts [0] + queryString;
+		}
 	}
 }));
 app.use ("/public/*", proxy (\`http://127.0.0.1:${config.startPort}\`, {
@@ -211,10 +215,7 @@ app.listen (config.port, function () {
 const config = require ("./../config");
 
 module.exports = function (app) {
-    app.use (proxy ("/api",
-        {target: \`http://127.0.0.1:${opts.projectPort}/\`}
-    ));
-    app.use (proxy ("/public",
+    app.use (proxy ("/${opts.createProject}",
         {target: \`http://127.0.0.1:${opts.projectPort}/\`}
     ));
 };
@@ -228,7 +229,7 @@ class App extends Component {
 	constructor (props) {
 		super (props);
 
-		store.setUrl ("/api");
+		store.setUrl ("/${opts.createProject}");
 		window.store = store;
 	}
 

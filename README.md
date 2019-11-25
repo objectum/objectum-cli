@@ -1,5 +1,11 @@
 # Objectum command-line interface (CLI)
 
+Objectum ecosystem:
+* Javascript platform https://github.com/objectum/objectum  
+* Isomorhic javascript client https://github.com/objectum/objectum-client  
+* React components https://github.com/objectum/objectum-react  
+* Objectum project example https://github.com/objectum/catalog 
+
 ## Install:
 ```bash
 npm i -g objectum-cli
