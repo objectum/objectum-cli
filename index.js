@@ -195,6 +195,10 @@ app.use ("/${opts.createProject}", proxy (\`http://127.0.0.1:${config.startPort}
 		} else {
 			return "/projects/${opts.createProject}" + parts [0] + queryString;
 		}
+	},
+	proxyErrorHandler: function (err, res) {
+		console.error (err.message);
+		res.send ({error: err.message});
 	}
 }));
 app.use (express.static (path.join (__dirname, "build")));
