@@ -332,8 +332,8 @@ program
 .option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
 .option ("--create-nokod <code>", "Legacy option")
-.option ("--siteKey <siteKey>", "Legacy option")
-.option ("--secretKey <secretKey>", "Legacy option")
+.option ("--site-key <key>", "Legacy option")
+.option ("--secret-key <key>", "Legacy option")
 .parse (process.argv);
 
 async function start () {

@@ -365,7 +365,7 @@ cd ${path}/firewall
 
 async function createNokod (opts) {
 	if (!opts.path || !opts.password) {
-		console.log ("path, password, siteKey, secretKey required.");
+		console.log ("--path, --password, --site-key, --secret-key required.");
 		return;
 	}
 	opts ["code"] = opts ["createNokod"];
