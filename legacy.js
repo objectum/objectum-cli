@@ -224,7 +224,7 @@ async function createForms (opts) {
 	"siteKey": "${opts.siteKey}",
 	"secretKey": "${opts.secretKey}",
 	"ipLimit": 13,
-	"respondentHidden": 1,
+	"respondentHidden": 0,
 	"mon": {
 		"host": "127.0.0.1",
 		"port": 8100,
@@ -364,7 +364,7 @@ cd ${path}/firewall
 };
 
 async function createNokod (opts) {
-	if (!opts.path || !opts.password) {
+	if (!opts.path || !opts.password || !opts.siteKey || !opts.secretKey) {
 		console.log ("--path, --password, --site-key, --secret-key required.");
 		return;
 	}

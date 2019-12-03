@@ -217,38 +217,67 @@ async function importCSV (opts) {
 		}
 		await init (opts);
 		
+		await store.startTransaction ("Import CSV");
+		
 		let data = fs.readFileSync (opts.importCsv, "utf8");
 		let rows = data.split ("\n");
 		let m = store.getModel (opts.model);
 		
-		await store.startTransaction ("Import CSV");
-		
-		let properties = [];
-		
 		rows = rows.filter (row => {
 			return row && row.trim ();
 		});
-		for (let i = 0; i < rows.length; i ++) {
+		if (rows.length < 2) {
+			throw new Error ("rows count must be > 1");
+		}
+		let properties = rows [0].split (";");
+		let dict = {};
+		
+		for (let i = 0; i < properties.length; i ++) {
+			let code = properties [i];
+			let property = m.properties [code];
+			
+			if (!property) {
+				throw new Error (`unknown property: ${code}`);
+			}
+			if (property.get ("type") >= 1000) {
+				let refModel = store.getModel (property.get ("type"));
+				
+				if (refModel.isDictionary ()) {
+					let recs = await store.getDict (refModel.getPath ());
+					
+					dict [code] = dict [code] || {};
+					
+					recs.forEach (rec => dict [code][(rec.name || "").toLowerCase ()] = rec.id);
+				}
+			}
+		}
+		for (let i = 1; i < rows.length; i ++) {
 			let row = rows [i];
 			let cols = row.split (";");
-			
-			if (!i) {
-				properties = cols;
-			} else {
-				let o = {_model: m.get ("id")};
+			let o = {_model: m.get ("id")};
 				
-				for (let j = 0; j < properties.length; j ++) {
-					let p = properties [j];
-					
-					o [p] = cols [j];
+			for (let j = 0; j < properties.length; j ++) {
+				let p = properties [j];
+				let v = cols [j].trim ();
+				
+				if (v !== "") {
+					if (dict [p]) {
+						if (dict [p].hasOwnProperty (v.toLowerCase ())) {
+							v = dict [p][v.toLowerCase ()];
+						} else {
+							throw new Error (`unknown dictionary parameter: ${v}, line: ${i + 1}`);
+						}
+					}
+					o [p] = v;
 				}
-				let record = await store.createRecord (o);
-				
-				console.log (i, "of", rows.length - 1, "result:", record._data);
 			}
+			let record = await store.createRecord (o);
+			
+			console.log (i, "of", rows.length - 1, "result:", record._data);
 		}
 		await store.commitTransaction ();
 	} catch (err) {
+		await store.rollbackTransaction ();
 		error (err.message);
 	}
 };
