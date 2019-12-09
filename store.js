@@ -118,9 +118,6 @@ async function createRecord (opts) {
 
 async function createDictionary (opts) {
 	try {
-		if (!opts.model) {
-			throw new Error ("--model <model> not exist");
-		}
 		await init (opts);
 		
 		let attrs = JSON.parse (opts.createDictionary);
@@ -128,27 +125,35 @@ async function createDictionary (opts) {
 		if (!attrs.name || !attrs.code) {
 			throw new Error ("name or code not exist");
 		}
-		store.getModel (opts.model);
+		let d;
 		
 		await store.startTransaction ("Create dictionary");
 		
-		let tokens = opts.model.split (".");
-		let prevPath = "d";
-		
-		for (let i = 0; i < tokens.length; i ++) {
-			let code = tokens [i];
-			let path = `d.${tokens.slice (0, i + 1).join (".")}`;
+		if (opts.model) {
+			store.getModel (opts.model);
 			
-			if (!store.map ["model"][path]) {
-				await store.createModel ({
-					name: `${code [0].toUpperCase ()}${code.substr (1)}`, code, parent: prevPath
-				});
+			let tokens = opts.model.split (".");
+			let prevPath = "d";
+			
+			for (let i = 0; i < tokens.length; i ++) {
+				let code = tokens [i];
+				let path = `d.${tokens.slice (0, i + 1).join (".")}`;
+				
+				if (! store.map ["model"][path]) {
+					await store.createModel ({
+						name: `${code [0].toUpperCase ()}${code.substr (1)}`, code, parent: prevPath
+					});
+				}
+				prevPath = path;
 			}
-			prevPath = path;
+			d = await store.createModel ({
+				name: attrs.name, code: attrs.code, parent: `d.${opts.model}`
+			});
+		} else {
+			d = await store.createModel ({
+				name: attrs.name, code: attrs.code, parent: "d"
+			});
 		}
-		let d = await store.createModel ({
-			name: attrs.name, code: attrs.code, parent: `d.${opts.model}`
-		});
 		await store.createProperty ({
 			model: d.getPath (), name: "Name", code: "name", type: "string"
 		});

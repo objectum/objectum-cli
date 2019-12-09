@@ -1,6 +1,6 @@
 {
 	"name": "objectum-cli",
-	"version": "1.0.30",
+	"version": "1.0.31",
 	"description": "Objectum CLI",
 	"main": "index.js",
 	"scripts": {
@@ -25,7 +25,7 @@
 	"homepage": "https://github.com/objectum/objectum-cli#readme",
 	"dependencies": {
 		"commander": "^4.0.0",
-		"objectum-client": "^1.1.20",
+		"objectum-client": "^1.1.35",
 		"pg": "^7.12.1",
 		"redis": "^2.8.0"
 	}
