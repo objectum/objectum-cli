@@ -151,7 +151,7 @@ async function createDictionary (opts) {
 			});
 		} else {
 			d = await store.createModel ({
-				name: attrs.name, code: attrs.code, parent: "d"
+				name: attrs.name, code: attrs.code, parent: attrs.parent || "d"
 			});
 		}
 		await store.createProperty ({
@@ -287,6 +287,60 @@ async function importCSV (opts) {
 	}
 };
 
+async function exportCSV (opts) {
+	try {
+		if (!opts.model) {
+			throw new Error ("--model <model> not exist");
+		}
+		await init (opts);
+		
+		let m = store.getModel (opts.model);
+		let data = await store.getData ({
+			model: opts.model,
+			offset: 0, limit: 1000000
+		});
+		let rows = [];
+		let row = [];
+		let dict = {};
+		
+		for (let code in m.properties) {
+			let property = m.properties [code];
+			
+			if (property.get ("type") >= 1000) {
+				let pm = store.getModel (property.get ("type"));
+				
+				if (pm.isDictionary ()) {
+					dict [code] = true;
+					
+					let recs = await store.getDict (property.get ("type"));
+					
+					recs.forEach (rec => dict [rec.id] = rec.name);
+				}
+			}
+			row.push (code);
+		}
+		rows.push (row.join (";"));
+		
+		data.recs.forEach (rec => {
+			row = [];
+			
+			for (let code in m.properties) {
+				if (dict [code]) {
+					row.push (dict [rec [code]] || "");
+				} else {
+					row.push (rec [code]);
+				}
+			}
+			rows.push (row.join (";"));
+		});
+		fs.writeFileSync (opts.exportCsv, rows.join ("\n"));
+		
+		console.log ("ok");
+	} catch (err) {
+		error (err.message);
+	}
+};
+
 module.exports = {
 	createModel,
 	createProperty,
@@ -295,5 +349,6 @@ module.exports = {
 	createRecord,
 	createDictionary,
 	createTable,
-	importCSV
+	importCSV,
+	exportCSV
 };

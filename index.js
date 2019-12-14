@@ -8,7 +8,17 @@ const chmodAsync = promisify (fs.chmod);
 const pg = require ("pg");
 const legacy = require ("./legacy");
 const {error, execAsync, exist, writeFile, mkdirAsync} = require ("./common");
-const {createModel, createProperty, createQuery, createColumn, createRecord, createDictionary, createTable, importCSV} = require ("./store");
+const {
+	createModel,
+	createProperty,
+	createQuery,
+	createColumn,
+	createRecord,
+	createDictionary,
+	createTable,
+	importCSV,
+	exportCSV
+} = require ("./store");
 const isWin = /^win/.test (process.platform);
 
 async function checkRedis (opts) {
@@ -330,6 +340,7 @@ program
 .option ("--create-dictionary <JSON>", `Create dictionary in model. Example: objectum-cli --create-dictionary "{'name': 'Type', 'code': 'type'}" --model item`) // name, code
 .option ("--create-table <JSON>", `Create table (tabular part) in model. Example: objectum-cli --create-table "{'name': 'Comment', 'code': 'comment'}" --model item`)
 .option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
+.option ("--export-csv <file>", "Export CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--site-key <key>", "Legacy option")
@@ -369,6 +380,9 @@ async function start () {
 		process.exit (1);
 	} else if (program ["importCsv"]) {
 		await importCSV (program);
+		process.exit (1);
+	} else if (program ["exportCsv"]) {
+		await exportCSV (program);
 		process.exit (1);
 	} else if (program ["createNokod"]) {
 		legacy.createNokod (program);
