@@ -107,7 +107,7 @@ async function createProject (opts) {
 	"dbUser": "${code}",
 	"dbPassword": "1",
 	"dbaUser": "postgres",
-	"dbaPassword": "12345",
+	"dbaPassword": "${opts.dbDbaPassword}",
 	"autologin": 1,
 	"visualObjectum": {
 		"serverActions": 1,
@@ -237,7 +237,7 @@ async function createForms (opts) {
 	"user": "avers_forms",
 	"password": "1",
 	"dbaUser": "postgres",
-	"dbaPassword": "12345"
+	"dbaPassword": "${opts.dbDbaPassword}"
     }
 }
 	`;
@@ -369,6 +369,7 @@ async function createNokod (opts) {
 	}
 	opts ["code"] = opts ["createNokod"];
 	opts ["password"] = require ("crypto").createHash ("sha1").update (opts.password).digest ("hex").toUpperCase ();
+	opts.dbDbaPassword = opts.dbDbaPassword || "12345";
 	
 	await createPlatform (opts);
 	await createForms (opts);
