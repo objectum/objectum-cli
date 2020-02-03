@@ -82,9 +82,8 @@ module.exports = new objectum.Objectum (config);
 	`);
 	fs.writeFileSync (path + "/node/start.sh",
 `rm *.log
-rm /var/log/objectum*.log
 export NODE_ENV=production
-forever start -a -l /var/log/objectum.log -o /dev/null -e /var/log/objectum-error.log --sourceDir ${path}/node index.js
+forever start -a -l ${path}/node/objectum.log -o /dev/null -e ${path}/node/objectum-error.log --sourceDir ${path}/node index.js
 	`);
 	fs.writeFileSync (path + "/node/stop.sh",
 `forever stop index.js
@@ -99,7 +98,7 @@ async function createProject (opts) {
 
 	let projectConfig =
 `{
-	"rootDir": "/opt/objectum/projects/${code}",
+	"rootDir": "${path}/projects/${code}",
 	"adminPassword": "${password}",
 	"database": "postgres",
 	"host": "localhost",
@@ -134,7 +133,7 @@ async function createProject (opts) {
 	},
 	"scripts": {
 		"client": [
-			"/opt/objectum/plugins/kladr/client.js"
+			"${path}/plugins/kladr/client.js"
 		]
 	},
 	"ose": {

@@ -5,11 +5,16 @@ const store = require ("objectum-client");
 const {error, exist} = require ("./common");
 
 async function init (opts) {
-	if (!await exist (`${process.cwd ()}/config.json`)) {
-		throw new Error (`Configuration of project "config.json" not exists in current directory.`);
+	if (!await exist (`${process.cwd ()}/config.json`) && !await exist (`${process.cwd ()}/../config.json`)) {
+		throw new Error (`Configuration of project "config.json" not exists in current directory (or upper "..").`);
 	}
-	const config = require (`${process.cwd ()}/config.json`);
+	let config;
 	
+	try {
+		config = require (`${process.cwd ()}/config.json`);
+	} catch (err) {
+		config = require (`${process.cwd ()}/../config.json`);
+	}
 	opts.url = `http://${config.objectum.host}:${config.objectum.port}/projects/${config.code}/`;
 	opts.adminPassword = config.adminPassword;
 	

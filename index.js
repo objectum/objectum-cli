@@ -333,7 +333,7 @@ program
 .option ("--db-path <path>", "Optional tablespace directory")
 .option ("--password <password>", "Project 'admin' password. Default: admin")
 .option ("--create-model <JSON>", `Create model. Example: objectum-cli --create-model "{'name': 'Item', 'code': 'item'}"`)
-.option ("--create-property <JSON>", `Create property. Example: objectum-cli --create-property "{'model': 'item', 'name': 'Name', 'code': 'name'}"`)
+.option ("--create-property <JSON>", `Create property. Example: objectum-cli --create-property "{'model': 'item', 'name': 'Name', 'code': 'name', 'type': 'string'}"`)
 .option ("--create-query <JSON>", `Create query. Example: objectum-cli --create-query \"{'name': 'Items', 'code': 'item'}\"`)
 .option ("--create-column <JSON>", `Create column. Example: objectum-cli --create-column "{'query': 'item', 'name': 'Name', 'code': 'name'}`)
 .option ("--create-record <JSON>", `Create record. Example: objectum-cli --create-record "{'_model': 'item', 'name': 'Item 1'}"`)
