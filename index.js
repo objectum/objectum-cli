@@ -165,7 +165,7 @@ async function createProject (opts) {
 		await checkPostgresPassword (opts);
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}`);
 		await execAsync (`npm init react-app .`, `${opts.path}/projects/${opts.createProject}`);
-		await execAsync (`npm install express express-http-proxy objectum-client objectum-react`, `${opts.path}/projects/${opts.createProject}`);
+		await execAsync (`npm install objectum-proxy objectum-react`, `${opts.path}/projects/${opts.createProject}`);
 		
 		writeFile (`${opts.path}/projects/${opts.createProject}/config.json`,
 			`{
@@ -189,35 +189,17 @@ async function createProject (opts) {
 }
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/index-${opts.projectPort}.js`,
-			`const config = require ("./config");
-const path = require ("path");
-const express = require ("express");
-const proxy = require ("express-http-proxy");
-const app = express ();
+			`import Proxy from "objectum-proxy";
+import fs from "fs";
+import {fileURLToPath} from "url";
+import {dirname} from "path";
 
-app.use ("/${opts.createProject}", proxy (\`http://127.0.0.1:${config.startPort}\`, {
-	proxyReqPathResolver: function (req) {
-		let parts = req.url.split('?');
-		let queryString = parts [1] ? ("?" + parts [1]) : "";
+const __filename = fileURLToPath (import.meta.url);
+const __dirname = dirname (__filename);
+const config = JSON.parse (fs.readFileSync ("./config.json", "utf8"));
+const proxy = new Proxy ();
 
-		if (parts [0].substr (0, 7) == "/public") {
-			return parts [0] + queryString;
-		} else {
-			return "/projects/${opts.createProject}" + parts [0] + queryString;
-		}
-	},
-	proxyErrorHandler: function (err, res) {
-		console.error (err.message);
-		res.send ({error: err.message});
-	}
-}));
-app.use (express.static (path.join (__dirname, "build")));
-app.get ("/*", function (req, res) {
-	res.sendFile (path.join (__dirname, "build", "index.html"));
-});
-app.listen (config.port, function () {
-	console.log (\`server listening on port ${opts.projectPort}\`);
-});
+proxy.start ({config, code: "${opts.createProject}", __dirname});
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/src/setupProxy.js`,
 			`const proxy = require ("http-proxy-middleware");
@@ -231,8 +213,14 @@ module.exports = function (app) {
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/src/App.js`,
 			`import React, {Component} from "react";
-import store from "objectum-client";
+import {Store} from "objectum-client";
 import {ObjectumApp} from "objectum-react";
+
+import "objectum-react/lib/css/bootstrap.css";
+import "objectum-react/lib/css/objectum.css";
+import "objectum-react/lib/fontawesome/css/all.css";
+
+const store = new Store ();
 
 class App extends Component {
 	constructor (props) {
@@ -305,6 +293,14 @@ forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /
 		writeFile (`${opts.path}/projects/${opts.createProject}/stop.${isWin ? "bat" : "sh"}`,
 			`forever stop ${opts.path}/projects/${opts.createProject}/index-${opts.projectPort}.js
 	`);
+		let data = JSON.parse (fs.readFileSync (`${opts.path}/projects/${opts.createProject}/package.json`, "utf8"));
+		
+		data.type = "module";
+
+		writeFile (`${opts.path}/projects/${opts.createProject}/package.json`, JSON.stringify (data, null, "\t"));
+		writeFile (`${opts.path}/projects/${opts.createProject}/bin/package.json`, "{}");
+		writeFile (`${opts.path}/projects/${opts.createProject}/src/package.json`, "{}");
+		
 		if (!isWin) {
 			await chmodAsync (`${opts.path}/projects/${opts.createProject}/start.sh`, 0o777);
 			await chmodAsync (`${opts.path}/projects/${opts.createProject}/stop.sh`, 0o777);
