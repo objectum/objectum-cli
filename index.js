@@ -199,8 +199,9 @@ const __dirname = dirname (__filename);
 const config = JSON.parse (fs.readFileSync ("./config.json", "utf8"));
 const proxy = new Proxy ();
 
-proxy.start ({config, code: "${opts.createProject}", __dirname});
+proxy.start ({config, path: "/api", __dirname});
 		`);
+/*
 		writeFile (`${opts.path}/projects/${opts.createProject}/src/setupProxy.js`,
 			`const proxy = require ("http-proxy-middleware");
 const config = require ("./../config");
@@ -211,6 +212,7 @@ module.exports = function (app) {
     ));
 };
 		`);
+*/
 		writeFile (`${opts.path}/projects/${opts.createProject}/src/App.js`,
 			`import React, {Component} from "react";
 import {Store} from "objectum-client";
@@ -226,7 +228,7 @@ class App extends Component {
 	constructor (props) {
 		super (props);
 
-		store.setUrl ("/${opts.createProject}");
+		store.setUrl ("/api");
 		window.store = store;
 	}
 
@@ -296,10 +298,10 @@ forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /
 		let data = JSON.parse (fs.readFileSync (`${opts.path}/projects/${opts.createProject}/package.json`, "utf8"));
 		
 		data.type = "module";
+		data.proxy = `http://localhost:${opts.projectPort}`;
 
 		writeFile (`${opts.path}/projects/${opts.createProject}/package.json`, JSON.stringify (data, null, "\t"));
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/package.json`, "{}");
-		writeFile (`${opts.path}/projects/${opts.createProject}/src/package.json`, "{}");
 		
 		if (!isWin) {
 			await chmodAsync (`${opts.path}/projects/${opts.createProject}/start.sh`, 0o777);
