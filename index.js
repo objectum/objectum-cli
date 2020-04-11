@@ -109,6 +109,9 @@ async function createPlatform (opts) {
 		app: {
 			workers: 3
 		}
+	},
+	pool: {
+		max: 20
 	}
 };
 		`);
@@ -118,25 +121,6 @@ async function createPlatform (opts) {
 
 module.exports = new Objectum (require ("./config"));
 		`);
-		if (isWin) {
-			writeFile (`${opts.path}/server/start.bat`,
-				`set NODE_ENV=production
-forever start -a -l ${opts.path}/server/objectum.log -o ${opts.path}/server/objectum-out.log -e ${opts.path}/server/objectum-err.log --sourceDir ${opts.path}/server index-${opts.objectumPort}.js
-			`);
-		} else {
-			writeFile (`${opts.path}/server/start.sh`,
-				`rm ${opts.path}/server/*.log
-export NODE_ENV=production
-forever start -a -l ${opts.path}/server/objectum.log -o /dev/null -e ${opts.path}/server/objectum-error.log --sourceDir ${opts.path}/server index-${opts.objectumPort}.js
-			`);
-		}
-		writeFile (`${opts.path}/server/stop.${isWin ? "bat" : "sh"}`,
-			`forever stop ${opts.path}/server/index-${opts.objectumPort}.js
-		`);
-		if (!isWin) {
-			await chmodAsync (`${opts.path}/server/start.sh`, 0o777);
-			await chmodAsync (`${opts.path}/server/stop.sh`, 0o777);
-		}
 	} catch (err) {
 		error (err.message);
 	}
@@ -201,18 +185,6 @@ const proxy = new Proxy ();
 
 proxy.start ({config, path: "/api", __dirname});
 		`);
-/*
-		writeFile (`${opts.path}/projects/${opts.createProject}/src/setupProxy.js`,
-			`const proxy = require ("http-proxy-middleware");
-const config = require ("./../config");
-
-module.exports = function (app) {
-    app.use (proxy ("/${opts.createProject}",
-        {target: \`http://127.0.0.1:${opts.projectPort}/\`}
-    ));
-};
-		`);
-*/
 		writeFile (`${opts.path}/projects/${opts.createProject}/src/App.js`,
 			`import React, {Component} from "react";
 import {Store} from "objectum-client";
@@ -234,7 +206,11 @@ class App extends Component {
 
 	render () {
 		return (
-			<ObjectumApp store={store} name="${opts.createProject}" />
+			<ObjectumApp
+				store={store}
+				name={process.env.REACT_APP_NAME || "${opts.createProject}"}
+				version={process.env.REACT_APP_VERSION}
+			/>
 		);
 	}
 };
@@ -280,21 +256,6 @@ $o.db.execute ({
 	file: "../schema/schema-${opts.createProject}.json"
 });
 		`);
-		if (isWin) {
-			writeFile (`${opts.path}/projects/${opts.createProject}/start.bat`,
-				`set NODE_ENV=production
-forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o ${opts.path}/projects/${opts.createProject}/project-out.log -e ${opts.path}/projects/${opts.createProject}/project-err.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
-			`);
-		} else {
-			writeFile (`${opts.path}/projects/${opts.createProject}/start.sh`,
-				`rm ${opts.path}/projects/${opts.createProject}/*.log
-export NODE_ENV=production
-forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /dev/null -e ${opts.path}/projects/${opts.createProject}/project-error.log --sourceDir ${opts.path}/projects/${opts.createProject} index-${opts.projectPort}.js
-			`);
-		}
-		writeFile (`${opts.path}/projects/${opts.createProject}/stop.${isWin ? "bat" : "sh"}`,
-			`forever stop ${opts.path}/projects/${opts.createProject}/index-${opts.projectPort}.js
-	`);
 		let data = JSON.parse (fs.readFileSync (`${opts.path}/projects/${opts.createProject}/package.json`, "utf8"));
 		
 		data.type = "module";
@@ -303,10 +264,6 @@ forever start -a -l ${opts.path}/projects/${opts.createProject}/project.log -o /
 		writeFile (`${opts.path}/projects/${opts.createProject}/package.json`, JSON.stringify (data, null, "\t"));
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/package.json`, "{}");
 		
-		if (!isWin) {
-			await chmodAsync (`${opts.path}/projects/${opts.createProject}/start.sh`, 0o777);
-			await chmodAsync (`${opts.path}/projects/${opts.createProject}/stop.sh`, 0o777);
-		}
 		await execAsync (`node ${opts.path}/projects/${opts.createProject}/bin/create.js`, `${opts.path}/projects/${opts.createProject}/bin`);
 		await execAsync (`node ${opts.path}/projects/${opts.createProject}/bin/import.js`, `${opts.path}/projects/${opts.createProject}/bin`);
 	} catch (err) {
