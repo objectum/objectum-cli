@@ -3,12 +3,13 @@
 Objectum ecosystem:
 * Javascript platform https://github.com/objectum/objectum  
 * Isomorhic javascript client https://github.com/objectum/objectum-client  
+* Proxy for server methods and access control https://github.com/objectum/objectum-proxy  
 * React components https://github.com/objectum/objectum-react  
 * Objectum project example https://github.com/objectum/catalog 
 
 ## Install:
 ```bash
-npm i -g objectum-cli
+npm install -g objectum-cli
 ```
 
 ## Options:
@@ -39,8 +40,24 @@ Options:
   --create-record <JSON>       Create record. Example: objectum-cli --create-record "{'_model': 'item', 'name': 'Item 1'}"
   --create-dictionary <JSON>   Create dictionary in model. Example: objectum-cli --create-dictionary "{'name': 'Type', 'code': 'type'}" --model item
   --create-table <JSON>        Create table (tabular part) in model. Example: objectum-cli --create-table "{'name': 'Comment', 'code': 'comment'}" --model item  --import-csv <file>          Import CSV file. Properties in 1st row. Delimiter ";". Require --model.
+  --import-csv <file>          Import CSV file. Properties in 1st row. Delimiter ";". Require --model.
+  --export-csv <file>          Export CSV file. Properties in 1st row. Delimiter ";". Require --model.
   --model <model>              Model
   -h, --help                   output usage information
+```
+
+## Platform installation
+
+```bash
+mkdir /opt/objectum
+objectum-cli --path /opt/objectum --create-platform
+```
+
+## Project installation
+Installs platform if not exist and project.
+```bash
+mkdir /opt/objectum
+objectum-cli --path /opt/objectum --create-project my_project
 ```
 
 ## Author
