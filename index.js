@@ -218,7 +218,7 @@ class App extends Component {
 export default App;
 		`);
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/bin`);
-		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/files`);
+		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/public/files`);
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/schema`);
 
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/create.js`,
