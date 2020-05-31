@@ -17,7 +17,8 @@ const {
 	createDictionary,
 	createTable,
 	importCSV,
-	exportCSV
+	exportCSV,
+	executeScript
 } = require ("./store");
 const isWin = /^win/.test (process.platform);
 
@@ -297,6 +298,7 @@ program
 .option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--export-csv <file>", "Export CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
+.option ("--file <file>", "Execute JSON script (createModel: [...], createProperty: [...], createQuery: [], createRecord: []")
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--site-key <key>", "Legacy option")
 .option ("--secret-key <key>", "Legacy option")
@@ -338,6 +340,9 @@ async function start () {
 		process.exit (1);
 	} else if (program ["exportCsv"]) {
 		await exportCSV (program);
+		process.exit (1);
+	} else if (program ["file"]) {
+		await executeScript (program);
 		process.exit (1);
 	} else if (program ["createNokod"]) {
 		legacy.createNokod (program);

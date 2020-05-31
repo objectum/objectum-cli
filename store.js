@@ -1,8 +1,11 @@
 "use strict";
 
 const fs = require ("fs");
-const store = require ("objectum-client");
+const _ = require ("lodash");
+const ProgressBar = require ("progress");
 const {error, exist} = require ("./common");
+const {Store} = require ("objectum-client");
+const store = new Store ();
 
 async function init (opts) {
 	if (!await exist (`${process.cwd ()}/config.json`) && !await exist (`${process.cwd ()}/../config.json`)) {
@@ -346,6 +349,60 @@ async function exportCSV (opts) {
 	}
 };
 
+async function executeScript (opts) {
+	try {
+		await init (opts);
+
+		let data = JSON.parse (fs.readFileSync (opts.file));
+		let commands = ["createModel", "createProperty", "createQuery", "createColumn", "createRecord"];
+		let refMap = {};
+		
+		await store.startTransaction ("executeScript");
+		
+		for (let i = 0; i < commands.length; i ++) {
+			let cmd = commands [i];
+			let recs = data [cmd];
+			
+			if (recs) {
+				let bar = new ProgressBar (`${cmd} - :current/:total, :elapsed sec.: :bar`, {total: recs.length, renderThrottle: 200});
+				
+				for (let j = 0; j < recs.length; j ++) {
+					let rec = recs [j];
+					
+					for (let a in rec) {
+						let v = rec [a];
+						
+						if (_.isArray (v)) {
+							v = v.join ("\n");
+						} else
+						if (_.isObject (v)) {
+							if (v._ref) {
+								if (!refMap [v._ref]) {
+									throw new Error (`_ref not exist: ${v._ref}`);
+								}
+								v = refMap [v._ref];
+							} else {
+								v = JSON.stringify (v, null, "\t");
+							}
+						}
+						rec [a] = v;
+					}
+					let result = await store [cmd] (rec);
+					
+					if (rec._ref) {
+						refMap [rec._ref] = result.id;
+					}
+					bar.tick ();
+				}
+			}
+		}
+		await store.commitTransaction ();
+		console.log ("ok");
+	} catch (err) {
+		error (err.message);
+	}
+};
+
 module.exports = {
 	createModel,
 	createProperty,
@@ -355,5 +412,6 @@ module.exports = {
 	createDictionary,
 	createTable,
 	importCSV,
-	exportCSV
+	exportCSV,
+	executeScript
 };
