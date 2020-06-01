@@ -2,6 +2,7 @@
 
 const fs = require ("fs");
 const _ = require ("lodash");
+const crypto = require ("crypto");
 const ProgressBar = require ("progress");
 const {error, exist} = require ("./common");
 const {Store} = require ("objectum-client");
@@ -368,6 +369,8 @@ async function executeScript (opts) {
 				
 				for (let j = 0; j < recs.length; j ++) {
 					let rec = recs [j];
+					let model = rec._model && store.getModel (rec._model);
+					let files = {};
 					
 					for (let a in rec) {
 						let v = rec [a];
@@ -385,12 +388,37 @@ async function executeScript (opts) {
 								v = JSON.stringify (v, null, "\t");
 							}
 						}
+						if (cmd == "createRecord") {
+							let property = model.properties [a];
+							
+							if (property) {
+								if (property.secure) {
+									v = crypto.createHash ("sha1").update (v).digest ("hex").toUpperCase ();
+								}
+								if (property.type == 5) {
+									let tokens = rec [a].split ("/");
+									
+									files [a] = v;
+									v = tokens [tokens.length - 1];
+								}
+							}
+						}
 						rec [a] = v;
 					}
 					let result = await store [cmd] (rec);
 					
 					if (rec._ref) {
 						refMap [rec._ref] = result.id;
+					}
+					// files
+					if (cmd == "createRecord") {
+						for (let a in rec) {
+							let property = model.properties [a];
+							
+							if (property && property.type == 5) {
+								fs.writeFileSync (`public/files/${result.id}-${property.id}-${rec [a]}`, fs.readFileSync (files [a]));
+							}
+						}
 					}
 					bar.tick ();
 				}
