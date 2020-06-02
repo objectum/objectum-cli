@@ -298,7 +298,7 @@ program
 .option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--export-csv <file>", "Export CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
-.option ("--file <file>", "Execute JSON script (createModel: [...], createProperty: [...], createQuery: [], createRecord: []")
+.option ("--file <file>", "Execute JSON script (createModel: [...], createProperty: [...], createQuery: [], createRecord: [])")
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--site-key <key>", "Legacy option")
 .option ("--secret-key <key>", "Legacy option")
