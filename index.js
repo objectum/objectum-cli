@@ -265,6 +265,8 @@ $o.db.execute ({
 		writeFile (`${opts.path}/projects/${opts.createProject}/package.json`, JSON.stringify (data, null, "\t"));
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/package.json`, "{}");
 		
+		fs.unlinkSync (`${opts.path}/projects/${opts.createProject}/src/setupProxy.js`);
+		
 		await execAsync (`node ${opts.path}/projects/${opts.createProject}/bin/create.js`, `${opts.path}/projects/${opts.createProject}/bin`);
 		await execAsync (`node ${opts.path}/projects/${opts.createProject}/bin/import.js`, `${opts.path}/projects/${opts.createProject}/bin`);
 	} catch (err) {
