@@ -155,7 +155,6 @@ async function createProject (opts) {
 		writeFile (`${opts.path}/projects/${opts.createProject}/config.json`,
 			`{
 	"code": "${opts.createProject}",
-	"rootDir": "${opts.path}/projects/${opts.createProject}",
 	"adminPassword": "${opts.password}",
 	"port": ${opts.projectPort},
 	"database": {
@@ -223,7 +222,7 @@ export default App;
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/schema`);
 
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/create.js`,
-			`let $o = require ("${opts.path}/server/objectum");
+			`let $o = require ("../../../server/objectum");
 
 $o.db.execute ({
 	code: "${opts.createProject}",
@@ -231,7 +230,7 @@ $o.db.execute ({
 });
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/remove.js`,
-			`let $o = require ("${opts.path}/server/objectum");
+			`let $o = require ("../../../server/objectum");
 
 $o.db.execute ({
 	code: "${opts.createProject}",
@@ -239,7 +238,7 @@ $o.db.execute ({
 });
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/import.js`,
-			`let $o = require ("${opts.path}/server/objectum");
+			`let $o = require ("../../../server/objectum");
 
 $o.db.execute ({
 	code: "${opts.createProject}",
@@ -248,7 +247,7 @@ $o.db.execute ({
 });
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/export.js`,
-			`let $o = require ("${opts.path}/server/objectum");
+			`let $o = require ("../../../server/objectum");
 
 $o.db.execute ({
 	code: "${opts.createProject}",
