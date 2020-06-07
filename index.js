@@ -89,8 +89,6 @@ async function createPlatform (opts) {
 		
 		writeFile (`${opts.path}/server/config.js`,
 		`module.exports = {
-	rootDir: "${opts.path}/server",
-	projectsDir: "${opts.path}/projects",
 	startPort: ${opts.objectumPort},
 	redis: {
 		host: "${opts.redisHost}",
