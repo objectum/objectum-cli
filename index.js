@@ -18,7 +18,8 @@ const {
 	createTable,
 	importCSV,
 	exportCSV,
-	executeScript
+	executeScript,
+	exportCLI
 } = require ("./store");
 const isWin = /^win/.test (process.platform);
 
@@ -298,6 +299,7 @@ program
 .option ("--export-csv <file>", "Export CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
 .option ("--file <file>", "Execute JSON script (createModel: [...], createProperty: [...], createQuery: [], createRecord: [])")
+.option ("--export-cli <file>", "Export CLI file. Models, properties, queries, columns.")
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--site-key <key>", "Legacy option")
 .option ("--secret-key <key>", "Legacy option")
@@ -342,6 +344,9 @@ async function start () {
 		process.exit (1);
 	} else if (program ["file"]) {
 		await executeScript (program);
+		process.exit (1);
+	} else if (program ["exportCli"]) {
+		await exportCLI (program);
 		process.exit (1);
 	} else if (program ["createNokod"]) {
 		legacy.createNokod (program);

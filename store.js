@@ -431,6 +431,81 @@ async function executeScript (opts) {
 	}
 };
 
+async function exportCLI (opts) {
+	try {
+		await init (opts);
+		
+		let map = {
+			model: {},
+			property: {},
+			query: {},
+			column: {}
+		};
+		let rscAttrs = {
+			"model": [
+				"parent", "name", "code", "description", "order", "unlogged", "query", "opts"
+			],
+			"property": [
+				"model", "name", "code", "description", "order", "type", "notNull", "secure", "unique", "validFunc", "removeRule", "opts"
+			],
+			"query": [
+				"parent", "name", "code", "description", "order", "query", "layout", "iconCls", "system", "model", "opts"
+			],
+			"column": [
+				"query", "name", "code", "description", "order", "property", "area", "columnWidth", "opts"
+			]
+		};
+		let data = {};
+		
+		_.each (rscAttrs, (attrs, rsc) => {
+			let d = [];
+			
+			_.sortBy (_.values (store.map [rsc]), "id").forEach (o => {
+				if (map [o.id] || (rsc == "model" && o.id < 1000) || o.schema) {
+					return;
+				}
+				let row = {};
+				
+				attrs.forEach (a => {
+					let v = o [a];
+					
+					if (v) {
+						if (a == "parent") {
+							v = store.map [rsc][v].getPath ();
+						}
+						if (a == "model" && rsc == "property") {
+							v = store.map ["model"][v].getPath ();
+						}
+						if (a == "query" && rsc == "column") {
+							v = store.map ["query"][v].getPath ();
+						}
+						if (a == "opts") {
+							v = JSON.parse (v);
+						}
+						if (a == "type" && rsc == "property") {
+							let t = store.map ["model"][v];
+							
+							v = t.getPath ();
+						}
+						if (a == "query" && rsc == "query") {
+							v = v.split ("\n");
+						}
+						row [a] = v;
+					}
+				});
+				d.push (row);
+				map [o.id] = true;
+			});
+			data ["create" + rsc [0].toUpperCase () + rsc.substr (1)] = d;
+		});
+		fs.writeFileSync (opts.exportCli, JSON.stringify (data, null, "\t"));
+		
+		console.log ("ok");
+	} catch (err) {
+		error (err.message);
+	}
+};
+
 module.exports = {
 	createModel,
 	createProperty,
@@ -441,5 +516,6 @@ module.exports = {
 	createTable,
 	importCSV,
 	exportCSV,
-	executeScript
+	executeScript,
+	exportCLI
 };
