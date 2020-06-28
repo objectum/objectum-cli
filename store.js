@@ -392,9 +392,11 @@ async function importJSON (opts) {
 							let property = model.properties [a];
 							
 							if (property) {
+/*
 								if (property.secure) {
 									v = crypto.createHash ("sha1").update (v).digest ("hex").toUpperCase ();
 								}
+*/
 								if (property.type == 5) {
 									let tokens = rec [a].split ("/");
 									
