@@ -234,7 +234,7 @@ async function importCSV (opts) {
 		await store.startTransaction ("Import CSV");
 		
 		let data = fs.readFileSync (opts.importCsv, "utf8");
-		let rows = data.split ("\n");
+		let rows = data.split ("\r\n");
 		let m = store.getModel (opts.model);
 		
 		rows = rows.filter (row => {
@@ -342,7 +342,7 @@ async function exportCSV (opts) {
 			}
 			rows.push (row.join (";"));
 		});
-		fs.writeFileSync (opts.exportCsv, rows.join ("\n"));
+		fs.writeFileSync (opts.exportCsv, rows.join ("\r\n"));
 		
 		console.log ("ok");
 	} catch (err) {
