@@ -18,8 +18,8 @@ const {
 	createTable,
 	importCSV,
 	exportCSV,
-	executeScript,
-	exportCLI
+	importJSON,
+	exportJSON
 } = require ("./store");
 const isWin = /^win/.test (process.platform);
 
@@ -298,8 +298,10 @@ program
 .option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--export-csv <file>", "Export CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
-.option ("--file <file>", "Execute JSON script (createModel: [...], createProperty: [...], createQuery: [], createRecord: [])")
-.option ("--export-cli <file>", "Export CLI file. Models, properties, queries, columns.")
+.option ("--import-json <file>", "Import JSON (createModel: [...], createProperty: [...], createQuery: [], createRecord: [])")
+.option ("--export-json <file>", `Export JSON. Models, properties, queries, columns`)
+.option ("--records <models>", `Export records to JSON (--records "model-1,model-2,model-3")`)
+.option ("--file-directory <directory>", `Files directory for export (import) records to JSON`)
 .option ("--create-nokod <code>", "Legacy option")
 .option ("--site-key <key>", "Legacy option")
 .option ("--secret-key <key>", "Legacy option")
@@ -342,11 +344,11 @@ async function start () {
 	} else if (program ["exportCsv"]) {
 		await exportCSV (program);
 		process.exit (1);
-	} else if (program ["file"]) {
-		await executeScript (program);
+	} else if (program ["importJson"]) {
+		await importJSON (program);
 		process.exit (1);
-	} else if (program ["exportCli"]) {
-		await exportCLI (program);
+	} else if (program ["exportJson"]) {
+		await exportJSON (program);
 		process.exit (1);
 	} else if (program ["createNokod"]) {
 		legacy.createNokod (program);

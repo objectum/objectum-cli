@@ -350,15 +350,15 @@ async function exportCSV (opts) {
 	}
 };
 
-async function executeScript (opts) {
+async function importJSON (opts) {
 	try {
 		await init (opts);
 
-		let data = JSON.parse (fs.readFileSync (opts.file));
+		let data = JSON.parse (fs.readFileSync (opts.importJson));
 		let commands = ["createModel", "createProperty", "createQuery", "createColumn", "createRecord"];
 		let refMap = {};
 		
-		await store.startTransaction ("executeScript");
+		await store.startTransaction ("importJSON");
 		
 		for (let i = 0; i < commands.length; i ++) {
 			let cmd = commands [i];
@@ -416,7 +416,13 @@ async function executeScript (opts) {
 							let property = model.properties [a];
 							
 							if (property && property.type == 5) {
-								fs.writeFileSync (`public/files/${result.id}-${property.id}-${rec [a]}`, fs.readFileSync (files [a]));
+								if (opts.fileDirectory) {
+									let buf = fs.readFileSync (`${opts.fileDirectory}/${files [a]}`);
+									
+									fs.writeFileSync (`public/files/${result.id}-${property.id}-${rec [a]}`, buf);
+								} else {
+									throw new Error ("--file-directory <directory> not exist");
+								}
 							}
 						}
 					}
@@ -431,7 +437,7 @@ async function executeScript (opts) {
 	}
 };
 
-async function exportCLI (opts) {
+async function exportJSON (opts) {
 	try {
 		await init (opts);
 		
@@ -498,11 +504,55 @@ async function exportCLI (opts) {
 			});
 			data ["create" + rsc [0].toUpperCase () + rsc.substr (1)] = d;
 		});
-		fs.writeFileSync (opts.exportCli, JSON.stringify (data, null, "\t"));
+		if (opts.records) {
+			let allRecs = [], map = {}, fileCount = 1;
+			let models = opts.records.split (",");
+			
+			for (let i = 0; i < models.length; i ++) {
+				let model = store.getModel (models [i].trim ());
+				let records = await store.getRecords ({model: model.getPath ()});
+				let recs = records.map (record => {
+					let rec = {
+						_model: model.getPath (),
+						_ref: "ref-" + record.id
+					};
+					map [record.id] = rec._ref;
+					
+					_.each (model.properties, property => {
+						let v = record [property.code];
+						
+						if (property.type >= 1000 && v) {
+							if (map [v]) {
+								v = {
+									_ref: map [v]
+								};
+							} else {
+								throw new Error ("unknown ref: " + v);
+							}
+						}
+						if (property.type == 5 && v) {
+							if (opts.fileDirectory) {
+								let buf = fs.readFileSync (`${process.cwd ()}/public/files/${record.id}-${property.id}-${v}`);
+								
+								v = `${fileCount ++}-${v}`;
+								fs.writeFileSync (`${opts.fileDirectory}/${v}`, buf);
+							} else {
+								throw new Error ("--file-directory <directory> not exist");
+							}
+						}
+						rec [property.code] = v;
+					});
+					return rec;
+				});
+				allRecs = [...allRecs, ...recs];
+			}
+			data ["createRecord"] = allRecs;
+		}
+		fs.writeFileSync (opts.exportJson, JSON.stringify (data, null, "\t"));
 		
 		console.log ("ok");
 	} catch (err) {
-		error (err.message);
+		error (err.message, err.stack);
 	}
 };
 
@@ -516,6 +566,6 @@ module.exports = {
 	createTable,
 	importCSV,
 	exportCSV,
-	executeScript,
-	exportCLI
+	importJSON,
+	exportJSON
 };
