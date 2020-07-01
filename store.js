@@ -2,10 +2,11 @@
 
 const fs = require ("fs");
 const _ = require ("lodash");
-const crypto = require ("crypto");
+//const crypto = require ("crypto");
 const ProgressBar = require ("progress");
+const csvParse = require ("csv-parse/lib/sync");
 const {error, exist} = require ("./common");
-const {Store} = require ("objectum-client");
+const {Store, execute} = require ("objectum-client");
 const store = new Store ();
 
 async function init (opts) {
@@ -229,70 +230,74 @@ async function importCSV (opts) {
 		if (!opts.model) {
 			throw new Error ("--model <model> not exist");
 		}
-		await init (opts);
+		let handler;
 		
+		if (opts.handler) {
+			handler = require (process.cwd () + "/" + opts.handler);
+		}
+		await init (opts);
 		await store.startTransaction ("Import CSV");
 		
 		let data = fs.readFileSync (opts.importCsv, "utf8");
-		let rows = data.split ("\r\n");
+		let rows = csvParse (data, {
+			columns: true,
+			skip_empty_lines: true,
+			delimiter: ";",
+			ltrim: true,
+			rtrim: true
+		});
+		//let rows = data.split ("\r\n");
 		let m = store.getModel (opts.model);
 		
-		rows = rows.filter (row => {
-			return row && row.trim ();
-		});
 		if (rows.length < 2) {
 			throw new Error ("rows count must be > 1");
 		}
-		let properties = rows [0].split (";");
-		let dict = {};
+		let properties = _.keys (rows [0]);
+		let bar = new ProgressBar (`:current/:total, :elapsed sec.: :bar`, {total: rows.length - 1, renderThrottle: 200});
 		
-		for (let i = 0; i < properties.length; i ++) {
-			let code = properties [i];
-			let property = m.properties [code];
-			
-			if (!property) {
-				throw new Error (`unknown property: ${code}`);
-			}
-			if (property.get ("type") >= 1000) {
-				let refModel = store.getModel (property.get ("type"));
-				
-				if (refModel.isDictionary ()) {
-					let recs = await store.getDict (refModel.getPath ());
-					
-					dict [code] = dict [code] || {};
-					
-					recs.forEach (rec => dict [code][(rec.name || "").toLowerCase ()] = rec.id);
-				}
-			}
-		}
 		for (let i = 1; i < rows.length; i ++) {
 			let row = rows [i];
-			let cols = row.split (";");
 			let o = {_model: m.get ("id")};
+			let files = {};
 				
 			for (let j = 0; j < properties.length; j ++) {
 				let p = properties [j];
-				let v = cols [j].trim ();
+				let v = row [p];
 				
 				if (v !== "") {
-					if (dict [p]) {
-						if (dict [p].hasOwnProperty (v.toLowerCase ())) {
-							v = dict [p][v.toLowerCase ()];
-						} else {
-							throw new Error (`unknown dictionary parameter: ${v}, line: ${i + 1}`);
-						}
+					let property = m.properties [p];
+					
+					if (property.type == 5) {
+						files [p] = v;
+						
+						let tokens = v.split ("/");
+						
+						v = tokens [tokens.length - 1];
 					}
 					o [p] = v;
 				}
 			}
+			if (handler && handler.onRow) {
+				await execute (handler.onRow, {store, row: o});
+			}
 			let record = await store.createRecord (o);
 			
-			console.log (i, "of", rows.length - 1, "result:", record._data);
+			for (let p in files) {
+				let property = m.properties [p];
+				
+				if (opts.fileDirectory) {
+					let buf = fs.readFileSync (`${opts.fileDirectory}/${files [p]}`);
+					
+					fs.writeFileSync (`public/files/${record.id}-${property.id}-${o [p]}`, buf);
+				} else {
+					throw new Error ("--file-directory <directory> not exist");
+				}
+			}
+			bar.tick ();
 		}
 		await store.commitTransaction ();
 	} catch (err) {
-		await store.rollbackTransaction ();
-		error (err.message);
+		error (err.message, err.stack);
 	}
 };
 
@@ -488,7 +493,12 @@ async function exportJSON (opts) {
 							v = store.map ["query"][v].getPath ();
 						}
 						if (a == "opts") {
-							v = JSON.parse (v);
+							try {
+								v = JSON.parse (v);
+							} catch (err) {
+								console.log (`opts parse error. rsc: "${rsc}", id: ${o.id}, value: `, v);
+								throw err;
+							}
 						}
 						if (a == "type" && rsc == "property") {
 							let t = store.map ["model"][v];

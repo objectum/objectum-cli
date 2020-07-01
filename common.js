@@ -5,8 +5,12 @@ const fs = require ("fs");
 const accessAsync = promisify (fs.access);
 const mkdirAsyncInternal = promisify (fs.mkdir);
 
-function error (s) {
+function error (s, stack) {
 	console.error ("\x1b[31m%s\x1b[0m", s);
+	
+	if (stack) {
+		console.log (stack);
+	}
 	process.exit (1);
 };
 

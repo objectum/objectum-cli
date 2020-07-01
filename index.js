@@ -298,6 +298,7 @@ program
 .option ("--import-csv <file>", "Import CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--export-csv <file>", "Export CSV file. Properties in 1st row. Delimiter \";\". Require --model.")
 .option ("--model <model>", "Model")
+.option ("--handler <file>", "Import handlers. onRow ({row})")
 .option ("--import-json <file>", "Import JSON (createModel: [...], createProperty: [...], createQuery: [], createRecord: [])")
 .option ("--export-json <file>", `Export JSON. Models, properties, queries, columns`)
 .option ("--records <models>", `Export records to JSON (--records "model-1,model-2,model-3")`)
