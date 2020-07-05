@@ -253,9 +253,9 @@ async function importCSV (opts) {
 			throw new Error ("rows count must be > 1");
 		}
 		let properties = _.keys (rows [0]);
-		let bar = new ProgressBar (`:current/:total, :elapsed sec.: :bar`, {total: rows.length - 1, renderThrottle: 200});
+		let bar = new ProgressBar (`:current/:total, :elapsed sec.: :bar`, {total: rows.length, renderThrottle: 200});
 		
-		for (let i = 1; i < rows.length; i ++) {
+		for (let i = 0; i < rows.length; i ++) {
 			let row = rows [i];
 			let o = {_model: m.get ("id")};
 			let files = {};
@@ -273,6 +273,10 @@ async function importCSV (opts) {
 						let tokens = v.split ("/");
 						
 						v = tokens [tokens.length - 1];
+					}
+					if (property.type == 2) {
+						v = v.replace (/[^0-9a-z.,]/gi, "");
+						v = Number (v.split (",").join ("."));
 					}
 					o [p] = v;
 				}
