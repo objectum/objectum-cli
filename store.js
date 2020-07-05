@@ -258,8 +258,8 @@ async function importCSV (opts) {
 		for (let i = 0; i < rows.length; i ++) {
 			let row = rows [i];
 			let o = {_model: m.get ("id")};
-			let files = {};
-				
+			let files = [];
+			
 			for (let j = 0; j < properties.length; j ++) {
 				let p = properties [j];
 				let v = row [p];
@@ -268,11 +268,7 @@ async function importCSV (opts) {
 					let property = m.properties [p];
 					
 					if (property.type == 5) {
-						files [p] = v;
-						
-						let tokens = v.split ("/");
-						
-						v = tokens [tokens.length - 1];
+						files.push (property);
 					}
 					if (property.type == 2) {
 						v = v.replace (/[^0-9a-z.,]/gi, "");
@@ -286,13 +282,14 @@ async function importCSV (opts) {
 			}
 			let record = await store.createRecord (o);
 			
-			for (let p in files) {
-				let property = m.properties [p];
+			for (let j = 0; j < files.length; j ++) {
+				let property = files [j];
+				let v = o [property.code];
 				
 				if (opts.fileDirectory) {
-					let buf = fs.readFileSync (`${opts.fileDirectory}/${files [p]}`);
+					let buf = fs.readFileSync (`${opts.fileDirectory}/${v}`);
 					
-					fs.writeFileSync (`public/files/${record.id}-${property.id}-${o [p]}`, buf);
+					fs.writeFileSync (`public/files/${record.id}-${property.id}-${v}`, buf);
 				} else {
 					throw new Error ("--file-directory <directory> not exist");
 				}
@@ -379,7 +376,6 @@ async function importJSON (opts) {
 				for (let j = 0; j < recs.length; j ++) {
 					let rec = recs [j];
 					let model = rec._model && store.getModel (rec._model);
-					let files = {};
 					
 					for (let a in rec) {
 						let v = rec [a];
@@ -397,23 +393,17 @@ async function importJSON (opts) {
 								v = JSON.stringify (v, null, "\t");
 							}
 						}
+/*
 						if (cmd == "createRecord") {
 							let property = model.properties [a];
 							
 							if (property) {
-/*
 								if (property.secure) {
 									v = crypto.createHash ("sha1").update (v).digest ("hex").toUpperCase ();
 								}
-*/
-								if (property.type == 5) {
-									let tokens = rec [a].split ("/");
-									
-									files [a] = v;
-									v = tokens [tokens.length - 1];
-								}
 							}
 						}
+*/
 						rec [a] = v;
 					}
 					let result = await store [cmd] (rec);
@@ -428,7 +418,7 @@ async function importJSON (opts) {
 							
 							if (property && property.type == 5) {
 								if (opts.fileDirectory) {
-									let buf = fs.readFileSync (`${opts.fileDirectory}/${files [a]}`);
+									let buf = fs.readFileSync (`${opts.fileDirectory}/${rec [a]}`);
 									
 									fs.writeFileSync (`public/files/${result.id}-${property.id}-${rec [a]}`, buf);
 								} else {
