@@ -115,11 +115,11 @@ async function createPlatform (opts) {
 	}
 };
 		`);
-		writeFile (`${opts.path}/server/index-${opts.objectumPort}.js`, `require ("objectum").start (require ("./config"));`);
+		writeFile (`${opts.path}/server/index-${opts.objectumPort}.js`, `require ("objectum").start (Object.assign (require ("./config"), {rootDir: __dirname}));`);
 		writeFile (`${opts.path}/server/objectum.js`,
 		`let Objectum = require ("objectum").Objectum;
 
-module.exports = new Objectum (require ("./config"));
+module.exports = new Objectum (Object.assign (require ("./config"), {rootDir: __dirname}));
 		`);
 	} catch (err) {
 		error (err.message);
