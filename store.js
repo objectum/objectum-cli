@@ -165,13 +165,13 @@ async function createDictionary (opts) {
 			});
 		}
 		await store.createProperty ({
-			model: d.getPath (), name: "Name", code: "name", type: "string"
+			model: d.getPath (), name: "Name", code: "name", type: "string", order: 1
 		});
 		await store.createProperty ({
-			model: d.getPath (), name: "Code", code: "code", type: "string"
+			model: d.getPath (), name: "Code", code: "code", type: "string", order: 2
 		});
 		await store.createProperty ({
-			model: d.getPath (), name: "Order", code: "order", type: "number"
+			model: d.getPath (), name: "Order", code: "order", type: "number", order: 3
 		});
 		await store.commitTransaction ();
 		
@@ -267,14 +267,16 @@ async function importCSV (opts) {
 				if (v !== "") {
 					let property = m.properties [p];
 					
-					if (property.type == 5) {
-						files.push (property);
+					if (property) {
+						if (property.type == 5) {
+							files.push (property);
+						}
+						if (property.type == 2) {
+							v = v.replace (/[^0-9a-z.,]/gi, "");
+							v = Number (v.split (",").join ("."));
+						}
+						o [p] = v;
 					}
-					if (property.type == 2) {
-						v = v.replace (/[^0-9a-z.,]/gi, "");
-						v = Number (v.split (",").join ("."));
-					}
-					o [p] = v;
 				}
 			}
 			if (handler && handler.onRow) {
