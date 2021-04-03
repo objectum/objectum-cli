@@ -149,7 +149,7 @@ async function createProject (opts) {
 		await checkPostgresPassword (opts);
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}`);
 		await execAsync (`npm init react-app .`, `${opts.path}/projects/${opts.createProject}`);
-		await execAsync (`npm install objectum-proxy objectum-react`, `${opts.path}/projects/${opts.createProject}`);
+		await execAsync (`npm install objectum-proxy objectum-react objectum-client`, `${opts.path}/projects/${opts.createProject}`);
 		
 		writeFile (`${opts.path}/projects/${opts.createProject}/config.json`,
 			`{
