@@ -29,8 +29,9 @@ function execAsync (cmd, cwd) {
 		if (cmd == "npm" && /^win/.test (process.platform)) {
 			cmd = "npm.cmd";
 		}
-		const worker = spawn (cmd, tokens.slice (1, tokens.length), {cwd});
+		const worker = spawn (cmd, tokens.slice (1, tokens.length), {cwd, stdio: "inherit"});
 		
+/*
 		worker.stdout.on ("data", (data) => {
 			if (Buffer.isBuffer (data)) {
 				data = data.toString ("utf8");
@@ -43,6 +44,7 @@ function execAsync (cmd, cwd) {
 			}
 			console.error (data);
 		});
+*/
 		worker.on ("close", (code) => {
 			//console.log (`exited with code: ${code}`);
 			resolve ();

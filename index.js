@@ -221,34 +221,26 @@ export default App;
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/schema`);
 
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/create.js`,
-			`let $o = require ("../../../server/objectum");
-
-$o.db.execute ({
+			`require ("../../../server/objectum").db.execute ({
 	code: "${opts.createProject}",
 	fn: "create"${opts.dbPath ? `,\n\tpath: "${opts.dbPath}"\n` : ""}
 });
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/remove.js`,
-			`let $o = require ("../../../server/objectum");
-
-$o.db.execute ({
+			`require ("../../../server/objectum").db.execute ({
 	code: "${opts.createProject}",
 	fn: "remove"
 });
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/import.js`,
-			`let $o = require ("../../../server/objectum");
-
-$o.db.execute ({
+			`require ("../../../server/objectum").db.execute ({
 	code: "${opts.createProject}",
 	fn: "import",
 	file: "schema-objectum.json"
 });
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/bin/export.js`,
-			`let $o = require ("../../../server/objectum");
-
-$o.db.execute ({
+			`require ("../../../server/objectum").db.execute ({
 	code: "${opts.createProject}",
 	fn: "export",
 	filterClasses: [],
