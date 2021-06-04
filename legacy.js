@@ -41,7 +41,7 @@ exports.config = {
 		enabled: true,
 		host: '127.0.0.1',
 		port: 6379,
-		resetCache: true
+		resetCache: true${opts.redisPassword ? `, password: "${opts.redisPassword}"` : ""}
 	},
 	query: {
 		maxRowNum: 500000,
@@ -359,9 +359,13 @@ cd ${path}/avers-forms
 cd ${path}/firewall
 ./start.sh
 	`);
+	fs.writeFileSync (path + "/stop-all.sh", "forever stopall");
 	await execAsync ("chmod +x " + path + "/*.sh");
 };
 
+/*
+	objectum-cli --path /opt --password AdmEkat --site-key 111 --secret-key 111 --create-nokod noko2021 --redis-password 123
+ */
 async function createNokod (opts) {
 	if (!opts.path || !opts.password || !opts.siteKey || !opts.secretKey) {
 		console.log ("--path, --password, --site-key, --secret-key required.");
