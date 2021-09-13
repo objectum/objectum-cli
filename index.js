@@ -185,37 +185,24 @@ const proxy = new Proxy ();
 proxy.start ({config, path: "/api", __dirname});
 		`);
 		writeFile (`${opts.path}/projects/${opts.createProject}/src/App.js`,
-			`import React, {Component} from "react";
-import {Store} from "objectum-client";
+			`import {Store} from "objectum-client";
 import {ObjectumApp} from "objectum-react";
 
 import "objectum-react/lib/css/bootstrap.css";
-import "objectum-react/lib/css/objectum.css";
 import "objectum-react/lib/fontawesome/css/all.css";
 
 const store = new Store ();
+store.setUrl ("/api");
+window.store = store;
 
-class App extends Component {
-	constructor (props) {
-		super (props);
-
-		store.setUrl ("/api");
-		window.store = store;
-	}
-
-	render () {
-		return (
-			<ObjectumApp
-				store={store}
-				name={process.env.REACT_APP_NAME || "${opts.createProject}"}
-				version={process.env.REACT_APP_VERSION}
-			/>
-		);
-	}
-};
-
-export default App;
-		`);
+export default function App () {
+	return <ObjectumApp
+		store={store}
+		name={process.env.REACT_APP_NAME || "${opts.createProject}"}
+		version={process.env.REACT_APP_VERSION}
+	/>;
+}
+`);
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/bin`);
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/public/files`);
 		await mkdirAsync (`${opts.path}/projects/${opts.createProject}/schema`);

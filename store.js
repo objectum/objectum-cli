@@ -23,7 +23,7 @@ async function init (opts) {
 	opts.url = `http://${config.objectum.host}:${config.objectum.port}/projects/${config.code}/`;
 	opts.adminPassword = config.adminPassword;
 	
-	["createModel", "createProperty", "createQuery", "createColumn", "createRecord", "createDictionary", "createTable"].forEach (a => {
+	["createModel", "updateModel", "createProperty", "createQuery", "createColumn", "createRecord", "createDictionary", "createTable"].forEach (a => {
 		if (opts [a]) {
 			opts [a] = opts [a].split ("'").join ('"');
 		}
@@ -48,6 +48,21 @@ async function createModel (opts) {
 		
 		await store.commitTransaction ();
 		
+		console.log ("result:", o._data);
+	} catch (err) {
+		error (err.message);
+	}
+};
+
+async function updateModel (opts) {
+	try {
+		await init (opts);
+		let attrs = JSON.parse (opts.updateModel);
+		await store.startTransaction ("Update model");
+		let o = await store.getModel (attrs.id);
+		Object.assign (o, attrs);
+		await o.sync ();
+		await store.commitTransaction ();
 		console.log ("result:", o._data);
 	} catch (err) {
 		error (err.message);
@@ -363,71 +378,88 @@ async function importJSON (opts) {
 		await init (opts);
 
 		let data = JSON.parse (fs.readFileSync (opts.importJson));
-		let commands = ["createModel", "createProperty", "createQuery", "createColumn", "createRecord"];
+		let commands = ["createModel", "createProperty", "createQuery", "createColumn", "createRecord", "updateModel"];
 		let refMap = {};
-		
-		await store.startTransaction ("importJSON");
-		
+
+		await store.startTransaction ("importJSON - creating");
+		console.log ("creating ...");
+
 		for (let i = 0; i < commands.length; i ++) {
 			let cmd = commands [i];
 			let recs = data [cmd];
-			
+
+			if (cmd == "updateModel") {
+				await store.commitTransaction ();
+				await store.startTransaction ("importJSON - updating");
+				console.log ("updating ...");
+			}
 			if (recs) {
 				let bar = new ProgressBar (`${cmd} - :current/:total, :elapsed sec.: :bar`, {total: recs.length, renderThrottle: 200});
 				
 				for (let j = 0; j < recs.length; j ++) {
 					let rec = recs [j];
-					let model = rec._model && store.getModel (rec._model);
-					
-					for (let a in rec) {
-						let v = rec [a];
-						
-						if (_.isArray (v)) {
-							v = v.join ("\n");
-						} else
-						if (_.isObject (v)) {
-							if (v._ref) {
-								if (!refMap [v._ref]) {
-									throw new Error (`_ref not exist: ${v._ref}`);
-								}
-								v = refMap [v._ref];
-							} else {
-								v = JSON.stringify (v, null, "\t");
-							}
-						}
-/*
-						if (cmd == "createRecord") {
-							let property = model.properties [a];
-							
-							if (property) {
-								if (property.secure) {
-									v = crypto.createHash ("sha1").update (v).digest ("hex").toUpperCase ();
-								}
-							}
-						}
-*/
-						rec [a] = v;
-					}
-					let result = await store [cmd] (rec);
-					
-					if (rec._ref) {
-						refMap [rec._ref] = result.id;
-					}
-					// files
-					if (cmd == "createRecord") {
+
+					try {
+						let model = rec._model && store.getModel (rec._model);
+
 						for (let a in rec) {
-							let property = model.properties [a];
-							
-							if (property && property.type == 5) {
-								if (opts.fileDirectory) {
-									let buf = fs.readFileSync (`${opts.fileDirectory}/${rec [a]}`);
-									
-									fs.writeFileSync (`public/files/${result.id}-${property.id}-${rec [a]}`, buf);
+							let v = rec [a];
+
+							if (_.isArray (v)) {
+								v = v.join ("\n");
+							} else if (_.isObject (v)) {
+								if (v._ref) {
+									if (!refMap [v._ref]) {
+										throw new Error (`_ref not exist: ${v._ref}`);
+									}
+									v = refMap [v._ref];
 								} else {
-									throw new Error ("--file-directory <directory> not exist");
+									v = JSON.stringify (v, null, "\t");
+								}
+							}
+							/*
+													if (cmd == "createRecord") {
+														let property = model.properties [a];
+
+														if (property) {
+															if (property.secure) {
+																v = crypto.createHash ("sha1").update (v).digest ("hex").toUpperCase ();
+															}
+														}
+													}
+							*/
+							rec [a] = v;
+						}
+						if (cmd == "updateModel") {
+							model = store.getModel (rec.id);
+							Object.assign (model, rec);
+							await model.sync ();
+						} else {
+							let result = await store [cmd] (rec);
+
+							if (rec._ref) {
+								refMap [rec._ref] = result.id;
+							}
+							// files
+							if (cmd == "createRecord") {
+								for (let a in rec) {
+									let property = model.properties [a];
+
+									if (property && property.type == 5) {
+										if (opts.fileDirectory) {
+											let buf = fs.readFileSync (`${opts.fileDirectory}/${rec [a]}`);
+
+											fs.writeFileSync (`public/files/${result.id}-${property.id}-${rec [a]}`, buf);
+										} else {
+											throw new Error ("--file-directory <directory> not exist");
+										}
+									}
 								}
 							}
 						}
+					} catch (err) {
+						console.log ("cmd:", cmd, "idx:", j, "rec:", rec);
+						throw err;
 					}
 					bar.tick ();
 				}
