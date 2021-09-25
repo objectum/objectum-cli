@@ -28,7 +28,7 @@
 		"commander": "^4.0.0",
 		"csv-parse": "^4.10.1",
 		"lodash": "^4.17.15",
-		"objectum-client": "^1.2.30",
+		"objectum-client": "^1.2.34",
 		"pg": "^8.5.1",
 		"progress": "^2.0.3",
 		"redis": "^2.8.0"
