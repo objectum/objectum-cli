@@ -109,9 +109,6 @@ async function createPlatform (opts) {
 		app: {
 			workers: 3
 		}
-	},
-	pool: {
-		max: 20
 	}
 };
 		`);
